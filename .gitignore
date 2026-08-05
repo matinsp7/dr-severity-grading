@@ -9,7 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-data/raw/
+data/test_images/
+data/train_images
+data/val_images
 outputs/
 
 .ipynb_checkpoints/
