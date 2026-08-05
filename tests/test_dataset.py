@@ -1,16 +1,12 @@
-from src.datasets.aptos_dataset import APTOSDataset
-from src.augmentations.transforms import get_train_transform
+from src.datasets.dataloader import get_train_dataloader
 
-dataset = APTOSDataset(
+train_loader = get_train_dataloader(
     csv_file="data/train_1.csv",
     image_dir="data/train_images",
-    transform=get_train_transform(),
 )
 
-print(f"Dataset size: {len(dataset)}")
+images, labels = next(iter(train_loader))
 
-image, label = dataset[0]
-
-print(image.shape)
-print(image.dtype)
-print(label)
+print(images.shape)
+print(labels.shape)
+print(labels)
