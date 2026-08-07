@@ -26,7 +26,7 @@ model:
 optimizer:
   name: adamw
   lr: 0.0001
-  weight_decay: 0.0001
+  weight_decay: 0.00001
 
 scheduler:
   name: cosine
@@ -36,7 +36,7 @@ loss:
   name: cross_entropy
 
 trainer:
-  epochs: 30
+  epochs: 5
 
 output:
-  save_dir: outputs/exp001_baseline
+  save_dir: outputs

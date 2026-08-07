@@ -1,61 +1,108 @@
+import argparse
+import shutil
+
 import torch
 import torch.nn as nn
 
-from src.datasets.dataloader import get_train_dataloader
-from src.models.efficientnet import EfficientNetDR
+from src.callbacks.checkpoint import CheckpointManager
+from src.callbacks.config_backup import backup_config
+from src.callbacks.git import save_git_hash
+from src.callbacks.logger import MetricLogger
+from src.datasets.dataloader import (
+    get_train_dataloader,
+    get_valid_dataloader,
+)
+from src.models.builder import build_model
+from src.trainer.trainer import Trainer
+from src.utils.config import load_config
+from src.utils.paths import ExperimentPaths
 
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--config",
+        required=True,
+    )
+
+    return parser.parse_args()
 
 
 def main():
-    print(f"Using device: {DEVICE}")
 
-    train_loader = get_train_dataloader(
-        csv_file="data/train_1.csv",
-        image_dir="data/train_images",
-        batch_size=16,
-        num_workers=0,
+    args = parse_args()
+
+    cfg = load_config(args.config)
+
+    device = torch.device(
+        "cuda"
+        if cfg.device == "cuda"
+        and torch.cuda.is_available()
+        else "cpu"
     )
 
-    model = EfficientNetDR(num_classes=5).to(DEVICE)
+    print(f"Using device: {device}")
 
-    criterion = nn.CrossEntropyLoss()
+    paths = ExperimentPaths(
+        cfg.experiment_name
+    )
+
+    backup_config(
+        args.config,
+        paths.config_copy,
+    )
+
+    save_git_hash(
+        paths.git_commit,
+    )
+
+    train_loader = get_train_dataloader(
+        cfg
+    )
+
+    valid_loader = get_valid_dataloader(
+        cfg
+    )
+
+    model = build_model(cfg).to(device)
 
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=1e-4,
+        lr=cfg.optimizer.lr,
+        weight_decay=cfg.optimizer.weight_decay,
     )
 
-    model.train()
+    criterion = nn.CrossEntropyLoss()
 
-    running_loss = 0.0
+    logger = MetricLogger(
+        paths.metrics_csv
+    )
 
-    for batch_idx, (images, labels) in enumerate(train_loader):
+    checkpoint = CheckpointManager(
+        paths
+    )
 
-        images = images.to(DEVICE)
-        labels = labels.to(DEVICE)
+    trainer = Trainer(
+        cfg=cfg,
+        model=model,
+        train_loader=train_loader,
+        valid_loader=valid_loader,
+        optimizer=optimizer,
+        criterion=criterion,
+        checkpoint=checkpoint,
+        logger=logger,
+        paths=paths,
+        device=device,
+    )
 
-        optimizer.zero_grad()
+    trainer.fit()
 
-        outputs = model(images)
-
-        loss = criterion(outputs, labels)
-
-        loss.backward()
-
-        optimizer.step()
-
-        running_loss += loss.item()
-
-        if (batch_idx + 1) % 20 == 0:
-            print(
-                f"Batch {batch_idx+1}/{len(train_loader)} | "
-                f"Loss: {running_loss/20:.4f}"
-            )
-            running_loss = 0.0
+    print()
 
     print("Training Finished!")
+
+    print(paths.root)
 
 
 if __name__ == "__main__":

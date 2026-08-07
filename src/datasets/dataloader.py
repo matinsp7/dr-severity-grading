@@ -1,25 +1,39 @@
 from torch.utils.data import DataLoader
 
-from src.augmentations.transforms import get_train_transform
 from src.datasets.aptos_dataset import APTOSDataset
+from src.augmentations.transforms import (
+    get_train_transform,
+    get_valid_transform,
+)
 
 
-def get_train_dataloader(
-    csv_file: str,
-    image_dir: str,
-    batch_size: int = 16,
-    num_workers: int = 4,
-):
+def get_train_dataloader(cfg):
     dataset = APTOSDataset(
-        csv_file=csv_file,
-        image_dir=image_dir,
+        csv_file=cfg.dataset.train_csv,
+        image_dir=cfg.dataset.train_dir,
         transform=get_train_transform(),
     )
 
     return DataLoader(
-        dataset,
-        batch_size=batch_size,
+        dataset=dataset,
+        batch_size=cfg.dataloader.batch_size,
         shuffle=True,
-        num_workers=0,
-        pin_memory=True,
+        num_workers=cfg.dataloader.num_workers,
+        pin_memory=cfg.dataloader.pin_memory,
+    )
+
+
+def get_valid_dataloader(cfg):
+    dataset = APTOSDataset(
+        csv_file=cfg.dataset.valid_csv,
+        image_dir=cfg.dataset.valid_dir,
+        transform=get_valid_transform(),
+    )
+
+    return DataLoader(
+        dataset=dataset,
+        batch_size=cfg.dataloader.batch_size,
+        shuffle=False,
+        num_workers=cfg.dataloader.num_workers,
+        pin_memory=cfg.dataloader.pin_memory,
     )
