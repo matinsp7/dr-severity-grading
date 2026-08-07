@@ -1,5 +1,3 @@
-import timm
-
 from src.models.efficientnet import EfficientNetDR
 
 

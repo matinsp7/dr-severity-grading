@@ -1,5 +1,8 @@
 import torch
-import torch.nn as nn
+
+from src.metrics.metrics import (
+    compute_metrics,
+)
 
 
 class Trainer:
@@ -8,6 +11,7 @@ class Trainer:
         self,
         model,
         train_loader,
+        valid_loader,
         optimizer,
         criterion,
         device,
@@ -16,6 +20,8 @@ class Trainer:
         self.model = model
 
         self.train_loader = train_loader
+
+        self.valid_loader = valid_loader
 
         self.optimizer = optimizer
 
@@ -27,9 +33,9 @@ class Trainer:
 
         self.model.train()
 
-        running_loss = 0.0
+        running_loss = 0
 
-        for batch_idx, (images, labels) in enumerate(self.train_loader):
+        for images, labels in self.train_loader:
 
             images = images.to(self.device)
 
@@ -47,11 +53,84 @@ class Trainer:
 
             running_loss += loss.item()
 
-            if (batch_idx + 1) % 20 == 0:
+        return running_loss / len(self.train_loader)
 
-                print(
-                    f"Batch {batch_idx+1}/{len(self.train_loader)} | "
-                    f"Loss: {running_loss/20:.4f}"
+    @torch.no_grad()
+    def validate(self):
+
+        self.model.eval()
+
+        predictions = []
+
+        labels_list = []
+
+        running_loss = 0
+
+        for images, labels in self.valid_loader:
+
+            images = images.to(self.device)
+
+            labels = labels.to(self.device)
+
+            outputs = self.model(images)
+
+            loss = self.criterion(outputs, labels)
+
+            running_loss += loss.item()
+
+            preds = outputs.argmax(dim=1)
+
+            predictions.extend(preds.cpu().numpy())
+
+            labels_list.extend(labels.cpu().numpy())
+
+        metrics = compute_metrics(
+            labels_list,
+            predictions,
+        )
+
+        metrics["loss"] = (
+            running_loss
+            / len(self.valid_loader)
+        )
+
+        return metrics
+    
+    def fit(self, epochs):
+
+        best_qwk = -1
+
+        for epoch in range(epochs):
+
+            train_loss = self.train_one_epoch()
+
+            metrics = self.validate()
+
+            print()
+
+            print(f"Epoch {epoch+1}/{epochs}")
+
+            print(f"Train Loss : {train_loss:.4f}")
+
+            print(f"Val Loss   : {metrics['loss']:.4f}")
+
+            print(f"Accuracy   : {metrics['accuracy']:.4f}")
+
+            print(f"Precision  : {metrics['precision']:.4f}")
+
+            print(f"Recall     : {metrics['recall']:.4f}")
+
+            print(f"F1         : {metrics['f1']:.4f}")
+
+            print(f"QWK        : {metrics['qwk']:.4f}")
+
+            if metrics["qwk"] > best_qwk:
+
+                best_qwk = metrics["qwk"]
+
+                print("New Best Model!")
+
+                torch.save(
+                    self.model.state_dict(),
+                    "outputs/best_model.pth",
                 )
-
-                running_loss = 0
