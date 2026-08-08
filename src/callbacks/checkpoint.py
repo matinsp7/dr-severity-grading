@@ -9,10 +9,21 @@ class CheckpointManager:
 
         self.best_qwk = -1
 
-    def save_last(self, model):
+    def save_last(
+        self,
+        model,
+        optimizer,
+        epoch,
+    ):
+        checkpoint = {
+            "epoch": epoch,
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "best_qwk": self.best_qwk,
+        }
 
         torch.save(
-            model.state_dict(),
+            checkpoint,
             self.paths.last_model,
         )
 

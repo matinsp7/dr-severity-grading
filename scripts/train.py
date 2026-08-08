@@ -26,6 +26,11 @@ def parse_args():
         required=True,
     )
 
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+    )
+
     return parser.parse_args()
 
 
@@ -94,6 +99,7 @@ def main():
         logger=logger,
         paths=paths,
         device=device,
+        resume=args.resume,
     )
 
     trainer.fit()
