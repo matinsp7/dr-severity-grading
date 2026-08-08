@@ -7,6 +7,9 @@ class ExperimentLogger:
     def log(self, metrics):
         raise NotImplementedError
 
+    def log_artifact(self, name, artifact_type, files, metadata=None):
+        raise NotImplementedError
+
     def finish(self):
         raise NotImplementedError
 
@@ -65,6 +68,9 @@ class MetricLogger:
 
             )
 
+    def log_artifact(self, name, artifact_type, files, metadata=None):
+        pass
+
     def finish(self):
         pass
 
@@ -80,6 +86,15 @@ class CombinedLogger(ExperimentLogger):
     def finish(self):
         for logger in self.loggers:
             logger.finish()
+
+    def log_artifact(self, name, artifact_type, files, metadata=None):
+        for logger in self.loggers:
+            logger.log_artifact(
+                name=name,
+                artifact_type=artifact_type,
+                files=files,
+                metadata=metadata,
+            )
 
 
 def build_logger(cfg, paths):

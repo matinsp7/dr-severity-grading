@@ -30,5 +30,22 @@ class WandBLogger:
             step=epoch,
         )
 
+    def log_artifact(self, name, artifact_type, files, metadata=None):
+
+        artifact = wandb.Artifact(
+            name=name,
+            type=artifact_type,
+            metadata=metadata or {},
+        )
+
+        for file_path in files:
+            artifact.add_file(
+                str(file_path)
+            )
+
+        self.run.log_artifact(
+            artifact
+        )
+
     def finish(self):
         self.run.finish()
