@@ -3,11 +3,13 @@ import shutil
 
 import torch
 import torch.nn as nn
+import random
+import numpy as np
 
 from src.callbacks.checkpoint import CheckpointManager
 from src.callbacks.config_backup import backup_config
 from src.callbacks.git import save_git_hash
-from src.callbacks.logger import MetricLogger
+from src.callbacks.logger import build_logger
 from src.datasets.dataloader import (
     get_train_dataloader,
     get_valid_dataloader,
@@ -28,12 +30,26 @@ def parse_args():
 
     return parser.parse_args()
 
+def set_seed(seed):
+    """
+    Sets random seed for Python, NumPy, and PyTorch.
+    CRITICAL for reproducibility - without this, you'll get
+    different results every time you run the same code,
+    making debugging and comparison impossible.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
 
 def main():
 
     args = parse_args()
 
     cfg = load_config(args.config)
+    set_seed(cfg.seed)
 
     device = torch.device(
         "cuda"
@@ -75,8 +91,9 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
 
-    logger = MetricLogger(
-        paths.metrics_csv
+    logger = build_logger(
+        cfg=cfg,
+        paths=paths,
     )
 
     checkpoint = CheckpointManager(
@@ -98,8 +115,9 @@ def main():
 
     trainer.fit()
 
-    print()
+    logger.finish()
 
+    print()
     print("Training Finished!")
 
     print(paths.root)

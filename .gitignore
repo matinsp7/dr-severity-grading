@@ -8,11 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+.vscode
+wandb
 
 data/test_images/
 data/train_images
 data/val_images
 outputs/
+
+repomix-output.xml
 
 .ipynb_checkpoints/
 

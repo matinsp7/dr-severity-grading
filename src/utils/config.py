@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from dataclasses import asdict
 import yaml
 
 
@@ -57,6 +57,13 @@ class OutputConfig:
 
 
 @dataclass
+class LoggingConfig:
+    enabled: bool = True
+    backend: str = "wandb"
+    project: str = "dr-severity-grading"
+
+
+@dataclass
 class Config:
     experiment_name: str
     seed: int
@@ -70,7 +77,10 @@ class Config:
     loss: LossConfig
     trainer: TrainerConfig
     output: OutputConfig
+    logging: LoggingConfig
 
+def config_to_dict(cfg):
+    return asdict(cfg)
 
 def load_config(path: str) -> Config:
 
@@ -90,4 +100,5 @@ def load_config(path: str) -> Config:
         loss=LossConfig(**raw["loss"]),
         trainer=TrainerConfig(**raw["trainer"]),
         output=OutputConfig(**raw["output"]),
+        logging=LoggingConfig( **raw["logging"]),
     )

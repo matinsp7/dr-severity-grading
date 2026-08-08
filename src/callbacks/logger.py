@@ -1,5 +1,14 @@
 import csv
 from pathlib import Path
+from src.utils.config import config_to_dict
+
+class ExperimentLogger:
+
+    def log(self, metrics):
+        raise NotImplementedError
+
+    def finish(self):
+        raise NotImplementedError
 
 
 class MetricLogger:
@@ -55,3 +64,46 @@ class MetricLogger:
                 ]
 
             )
+
+    def finish(self):
+        pass
+
+class CombinedLogger(ExperimentLogger):
+
+    def __init__(self, loggers):
+        self.loggers = loggers
+
+    def log(self, metrics):
+        for logger in self.loggers:
+            logger.log(metrics)
+
+    def finish(self):
+        for logger in self.loggers:
+            logger.finish()
+
+
+def build_logger(cfg, paths):
+
+    loggers = [MetricLogger(paths.metrics_csv)]
+
+    if cfg.logging.enabled:
+
+        if cfg.logging.backend == "wandb":
+
+            from src.callbacks.wandb_logger import WandBLogger
+
+            loggers.append(
+                WandBLogger(
+                    project=cfg.logging.project,
+                    experiment_name=cfg.experiment_name,
+                    config=config_to_dict(cfg),
+                )
+            )
+
+        else:
+            raise ValueError(
+                f"Unknown logging backend: "
+                f"{cfg.logging.backend}"
+            )
+
+    return CombinedLogger(loggers)

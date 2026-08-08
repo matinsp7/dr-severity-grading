@@ -40,3 +40,8 @@ trainer:
 
 output:
   save_dir: outputs
+
+logging:
+  enabled: true
+  backend: wandb
+  project: dr-severity-grading
