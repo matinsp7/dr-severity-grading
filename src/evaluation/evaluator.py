@@ -1,0 +1,108 @@
+import torch
+
+from src.metrics.metrics import (
+    compute_auc_metrics,
+    compute_metrics,
+)
+
+
+class Evaluator:
+
+    def __init__(
+        self,
+        model,
+        dataloader,
+        criterion,
+        device,
+    ):
+        self.model = model
+        self.dataloader = dataloader
+        self.criterion = criterion
+        self.device = device
+
+    @torch.inference_mode()
+    def predict(self):
+        self.model.eval()
+
+        running_loss = 0.0
+
+        labels = []
+        predictions = []
+        probabilities = []
+
+        for images, batch_labels in self.dataloader:
+            images = images.to(
+                self.device,
+                non_blocking=True,
+            )
+
+            batch_labels = batch_labels.to(
+                self.device,
+                non_blocking=True,
+            )
+
+            logits = self.model(images)
+
+            loss = self.criterion(
+                logits,
+                batch_labels,
+            )
+
+            running_loss += loss.item()
+
+            batch_probabilities = torch.softmax(
+                logits,
+                dim=1,
+            )
+
+            batch_predictions = batch_probabilities.argmax(
+                dim=1
+            )
+
+            labels.extend(
+                batch_labels.cpu().tolist()
+            )
+
+            predictions.extend(
+                batch_predictions.cpu().tolist()
+            )
+
+            probabilities.extend(
+                batch_probabilities.cpu().tolist()
+            )
+
+        return {
+            "labels": labels,
+            "predictions": predictions,
+            "probabilities": probabilities,
+            "loss": (
+                running_loss
+                / len(self.dataloader)
+            ),
+        }
+
+    def evaluate(self):
+        results = self.predict()
+
+        metrics = compute_metrics(
+            results["labels"],
+            results["predictions"],
+        )
+
+        auc_metrics = compute_auc_metrics(
+            results["labels"],
+            results["probabilities"],
+        )
+
+        metrics.update(
+            auc_metrics
+        )
+
+        metrics["val_loss"] = results["loss"]
+
+        return {
+            "metrics": metrics,
+            "labels": results["labels"],
+            "predictions": results["predictions"],
+            "probabilities": results["probabilities"],
+        }

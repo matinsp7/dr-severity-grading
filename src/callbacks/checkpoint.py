@@ -16,11 +16,24 @@ class CheckpointManager:
             self.paths.last_model,
         )
 
-    def update_best(
-        self,
-        model,
-        metrics,
-    ):
+    def load_best(self, model, device):
+        checkpoint_path = self.paths.best_model
+
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(
+                f"Best checkpoint not found: {checkpoint_path}"
+            )
+
+        state_dict = torch.load(
+            checkpoint_path,
+            map_location=device,
+        )
+
+        model.load_state_dict(state_dict)
+
+        return model
+
+    def update_best(self, model, metrics):
 
         if metrics["qwk"] <= self.best_qwk:
             return False

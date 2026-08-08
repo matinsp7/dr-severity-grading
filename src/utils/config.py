@@ -13,6 +13,8 @@ class DatasetConfig:
 
     image_size: int
 
+    class_names: list[str]
+
 
 @dataclass
 class DataLoaderConfig:

@@ -68,3 +68,24 @@ class ExperimentPaths:
     def qwk_curve(self):
 
         return self.figures / "qwk_curve.png"
+
+    @property
+    def normalized_confusion_matrix(self):
+        return (
+                self.figures
+                / "normalized_confusion_matrix.png"
+        )
+
+    @property
+    def roc_curve(self):
+        return (
+                self.figures
+                / "roc_curve.png"
+        )
+
+    @property
+    def pr_curve(self):
+        return (
+                self.figures
+                / "pr_curve.png"
+        )
