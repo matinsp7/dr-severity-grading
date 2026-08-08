@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 
 from src.metrics.metrics import compute_metrics
 
@@ -45,7 +46,7 @@ class Trainer:
 
         running_loss = 0
 
-        for images, labels in self.train_loader:
+        for images, labels in tqdm(self.train_loader, "Training", leave=False):
 
             images = images.to(self.device)
 
@@ -81,7 +82,7 @@ class Trainer:
 
         labels_list = []
 
-        for images, labels in self.valid_loader:
+        for images, labels in tqdm(self.valid_loader, "Validation", leave=False):
 
             images = images.to(
                 self.device
