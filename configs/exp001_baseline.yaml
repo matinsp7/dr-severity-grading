@@ -37,6 +37,7 @@ loss:
 
 trainer:
   epochs: 5
+  patience: 5
 
 output:
   save_dir: outputs

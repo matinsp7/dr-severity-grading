@@ -14,12 +14,14 @@ class CheckpointManager:
         model,
         optimizer,
         epoch,
+        patience_counter,
     ):
         checkpoint = {
             "epoch": epoch,
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "best_qwk": self.best_qwk,
+            "patience_counter": patience_counter,
         }
 
         torch.save(

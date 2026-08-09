@@ -49,6 +49,7 @@ class LossConfig:
 @dataclass
 class TrainerConfig:
     epochs: int
+    patience: int
 
 
 @dataclass

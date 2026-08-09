@@ -17,7 +17,8 @@ class Trainer:
         logger,
         paths,
         device,
-        resume,
+        early_stopping,
+        resume=False,
     ):
 
         self.cfg = cfg
@@ -41,6 +42,8 @@ class Trainer:
         self.device = device
 
         self.resume_training = resume
+
+        self.early_stopping = early_stopping
 
     def train_one_epoch(self):
 
@@ -167,12 +170,6 @@ class Trainer:
 
             self.logger.log(metrics)
 
-            self.checkpoint.save_last(
-                self.model,
-                self.optimizer,
-                self.model
-            )
-
             is_best = (
 
                 self.checkpoint.update_best(
@@ -185,6 +182,17 @@ class Trainer:
 
             )
 
+            should_stop = self.early_stopping.step(
+                is_best
+            )
+
+            self.checkpoint.save_last(
+                self.model,
+                self.optimizer,
+                epoch ,
+                self.early_stopping.counter,
+            )
+
             self.print_metrics(
 
                 metrics,
@@ -192,6 +200,14 @@ class Trainer:
                 is_best,
 
             )
+
+            if should_stop:
+                print(
+                    "EarlyStopping: "
+                    "QWK did not improve for "
+                    f"{self.early_stopping.patience} epochs."
+                )
+                break
 
     def print_metrics(
 
@@ -261,7 +277,10 @@ class Trainer:
 
     def resume(self):
         if not self.paths.last_model.exists():
-            print("No checkpoint found! Starting training from scratch.")
+            print(
+                "No checkpoint found! "
+                "Starting training from scratch."
+            )
             return 0
 
         checkpoint = torch.load(
@@ -269,14 +288,27 @@ class Trainer:
             map_location=self.device,
         )
 
-        self.model.load_state_dict(checkpoint["model"])
-        self.optimizer.load_state_dict(checkpoint["optimizer"])
+        self.model.load_state_dict(
+            checkpoint["model"]
+        )
 
-        self.checkpoint.best_qwk = checkpoint["best_qwk"]
+        self.optimizer.load_state_dict(
+            checkpoint["optimizer"]
+        )
 
-        start_epoch = checkpoint["epoch"] + 1
+        self.checkpoint.best_qwk = (
+            checkpoint["best_qwk"]
+        )
+
+        self.early_stopping.counter = (
+            checkpoint["patience_counter"]
+        )
+
+        start_epoch = checkpoint["epoch"]+1
 
         print("Resume Training")
-        print(f"Resuming from epoch {start_epoch}")
+        print(
+            f"Resuming from epoch {start_epoch}"
+        )
 
         return start_epoch
