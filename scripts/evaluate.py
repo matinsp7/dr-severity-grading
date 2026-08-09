@@ -110,10 +110,10 @@ def main():
 
     logger = build_logger(cfg=cfg, paths=paths)
 
-    logger.log_image("evaluation/confusion_matrix", paths.confusion_matrix)
-    logger.log_image("evaluation/normalized_confusion_matrix", paths.normalized_confusion_matrix)
-    logger.log_image("evaluation/roc_curve", paths.roc_curve)
-    logger.log_image("evaluation/pr_curve", paths.pr_curve)
+    logger.log_image("evaluation/confusion_matrix", paths.confusion_matrix)                         #w&b
+    logger.log_image("evaluation/normalized_confusion_matrix", paths.normalized_confusion_matrix)   #w&b
+    logger.log_image("evaluation/roc_curve", paths.roc_curve)                                       #w&b
+    logger.log_image("evaluation/pr_curve", paths.pr_curve)                                         #w&b
 
     logger.log_summary(results["metrics"])
 

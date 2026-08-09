@@ -49,7 +49,8 @@ class Evaluator:
                 batch_labels,
             )
 
-            running_loss += loss.item()
+            total_loss += loss.item() * batch_labels.size(0)
+            total_samples += batch_labels.size(0)
 
             batch_probabilities = torch.softmax(
                 logits,
@@ -76,10 +77,7 @@ class Evaluator:
             "labels": labels,
             "predictions": predictions,
             "probabilities": probabilities,
-            "loss": (
-                running_loss
-                / len(self.dataloader)
-            ),
+            "loss": total_loss / total_samples
         }
 
     def evaluate(self):

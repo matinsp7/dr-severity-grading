@@ -46,6 +46,7 @@ def plot_confusion_matrix(
     matrix = confusion_matrix(
         labels,
         predictions,
+        labels=np.arange(len(class_names)),
     )
 
     fig, ax = plt.subplots(
@@ -203,6 +204,7 @@ def plot_normalized_confusion_matrix(
     matrix = confusion_matrix(
         labels,
         predictions,
+        labels=np.arange(len(class_names)),
         normalize="true",
     )
 
