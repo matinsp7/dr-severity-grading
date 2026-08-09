@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 
 from src.metrics.metrics import (
     compute_auc_metrics,
@@ -30,7 +31,7 @@ class Evaluator:
         predictions = []
         probabilities = []
 
-        for images, batch_labels in self.dataloader:
+        for images, batch_labels in tqdm(self.dataloader, "Evaluating", leave=False):
             images = images.to(
                 self.device,
                 non_blocking=True,

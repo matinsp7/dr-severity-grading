@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -10,6 +11,9 @@ from sklearn.metrics import (
     roc_curve,
 )
 from sklearn.preprocessing import label_binarize
+
+import matplotlib
+matplotlib.use('Agg')
 
 def _save_figure(
     fig,
@@ -56,6 +60,7 @@ def plot_confusion_matrix(
     display.plot(
         ax=ax,
         values_format="d",
+        cmap="Blues",
     )
 
     ax.set_title(
@@ -213,6 +218,7 @@ def plot_normalized_confusion_matrix(
     display.plot(
         ax=ax,
         values_format=".2f",
+        cmap="Greens"
     )
 
     ax.set_title(

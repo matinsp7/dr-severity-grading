@@ -43,7 +43,7 @@ loss:
   name: cross_entropy
 
 trainer:
-  epochs: 5
+  epochs: 3
 
 output:
   save_dir: outputs

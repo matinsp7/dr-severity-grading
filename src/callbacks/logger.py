@@ -10,6 +10,12 @@ class ExperimentLogger:
     def log_artifact(self, name, artifact_type, files, metadata=None):
         raise NotImplementedError
 
+    def log_image(self, name, image_path):
+        raise NotImplementedError
+
+    def log_summary(self, metrics):
+        raise NotImplementedError
+
     def finish(self):
         raise NotImplementedError
 
@@ -71,6 +77,12 @@ class MetricLogger:
     def log_artifact(self, name, artifact_type, files, metadata=None):
         pass
 
+    def log_image(self, name, image_path):
+        pass
+
+    def log_summary(self, metrics):
+        pass
+
     def finish(self):
         pass
 
@@ -96,9 +108,16 @@ class CombinedLogger(ExperimentLogger):
                 metadata=metadata,
             )
 
+    def log_image(self, name, image_path):
+        for logger in self.loggers:
+            logger.log_image(name, image_path)
+
+    def log_summary(self, metrics):
+        for logger in self.loggers:
+            logger.log_summary(metrics)
+
 
 def build_logger(cfg, paths):
-
     loggers = [MetricLogger(paths.metrics_csv)]
 
     if cfg.logging.enabled:
@@ -106,12 +125,26 @@ def build_logger(cfg, paths):
         if cfg.logging.backend == "wandb":
 
             from src.callbacks.wandb_logger import WandBLogger
+            import wandb
+
+            run_id_path = paths.root / "wandb_run_id.txt"
+
+            if run_id_path.exists():
+                with open(run_id_path, "r") as f:
+                    run_id = f.read().strip()
+            else:
+                run_id = wandb.util.generate_id()
+                with open(run_id_path, "w") as f:
+                    f.write(run_id)
+            # ---------------------------------------------
 
             loggers.append(
                 WandBLogger(
                     project=cfg.logging.project,
                     experiment_name=cfg.experiment_name,
                     config=config_to_dict(cfg),
+                    run_id=run_id,
+                    resume="allow",
                 )
             )
 

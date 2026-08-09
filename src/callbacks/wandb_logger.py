@@ -7,11 +7,15 @@ class WandBLogger:
         project,
         experiment_name,
         config,
+        run_id=None,
+        resume=None,
     ):
         self.run = wandb.init(
             project=project,
             name=experiment_name,
             config=config,
+            id=run_id,
+            resume=resume,
         )
 
     def log(self, metrics):
@@ -46,6 +50,20 @@ class WandBLogger:
         self.run.log_artifact(
             artifact
         )
+
+    def log_image(self, name, image_path):
+        self.run.log(
+            {
+                name: wandb.Image(str(image_path))
+            }
+        )
+
+    def log_summary(self, metrics):
+        for key, value in metrics.items():
+            if key == "val_loss":
+                self.run.summary["val/loss"] = value
+            else:
+                self.run.summary[f"val/{key}"] = value
 
     def finish(self):
         self.run.finish()

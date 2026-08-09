@@ -2,6 +2,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+from src.callbacks.logger import build_logger
 
 from src.callbacks.checkpoint import CheckpointManager
 from src.datasets.dataloader import get_valid_dataloader
@@ -9,6 +10,7 @@ from src.evaluation.evaluator import Evaluator
 from src.models.builder import build_model
 from src.utils.config import load_config
 from src.utils.paths import ExperimentPaths
+from sklearn.metrics import classification_report
 from src.evaluation.plots import (
     plot_confusion_matrix,
     plot_normalized_confusion_matrix,
@@ -105,6 +107,19 @@ def main():
         class_names=cfg.dataset.class_names,
         output_path=paths.pr_curve,
     )
+
+    logger = build_logger(cfg=cfg, paths=paths)
+
+    logger.log_image("evaluation/confusion_matrix", paths.confusion_matrix)
+    logger.log_image("evaluation/normalized_confusion_matrix", paths.normalized_confusion_matrix)
+    logger.log_image("evaluation/roc_curve", paths.roc_curve)
+    logger.log_image("evaluation/pr_curve", paths.pr_curve)
+
+    logger.log_summary(results["metrics"])
+
+    logger.finish()
+
+
     print()
     print("=" * 45)
     print("Evaluation")
@@ -117,6 +132,8 @@ def main():
     print(
         f"Samples     : {len(results['labels'])}"
     )
+
+    print(f"\n{30*'-'}\nClassification Report\n{classification_report(results["labels"], results["predictions"])}" )
 
     print()
     print("Metrics")

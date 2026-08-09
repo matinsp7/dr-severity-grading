@@ -115,22 +115,22 @@ def main():
 
     trainer.fit()
 
-    logger.log_artifact(
-        name=f"{cfg.experiment_name}-checkpoints",
-        artifact_type="model",
-        files=[
-            paths.best_model,
-            paths.last_model,
-        ],
-        metadata={
-            "experiment_name": cfg.experiment_name,
-            "model": cfg.model.name,
-            "num_classes": cfg.model.num_classes,
-            "best_qwk": checkpoint.best_qwk,
-        },
-    )
-
-    logger.finish()
+    # logger.log_artifact(
+    #     name=f"{cfg.experiment_name}-checkpoints",
+    #     artifact_type="model",
+    #     files=[
+    #         paths.best_model,
+    #         paths.last_model,
+    #     ],
+    #     metadata={
+    #         "experiment_name": cfg.experiment_name,
+    #         "model": cfg.model.name,
+    #         "num_classes": cfg.model.num_classes,
+    #         "best_qwk": checkpoint.best_qwk,
+    #     },
+    # )
+    #
+    # logger.finish()
 
     print()
     print("Training Finished!")
