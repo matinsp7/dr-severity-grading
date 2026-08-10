@@ -46,66 +46,103 @@ class Trainer:
 
         self.early_stopping = early_stopping
 
+        self.use_amp = (self.cfg.device == "cuda" and torch.cuda.is_available())
+
+        self.amp_dtype = torch.float16
+
+        self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
+
     def train_one_epoch(self):
 
         self.model.train()
 
-        running_loss = 0
+        running_loss = 0.0
 
-        for images, labels in tqdm(self.train_loader, "Training", leave=False):
-
-            images = images.to(self.device)
-
-            labels = labels.to(self.device)
-
-            self.optimizer.zero_grad()
-
-            outputs = self.model(images)
-
-            loss = self.criterion(
-                outputs,
-                labels,
+        for images, labels in tqdm(
+                self.train_loader,
+                "Training",
+                leave=False,
+        ):
+            images = images.to(
+                self.device,
+                non_blocking=True,
             )
 
-            loss.backward()
+            labels = labels.to(
+                self.device,
+                non_blocking=True,
+            )
 
-            self.optimizer.step()
+            self.optimizer.zero_grad(
+                set_to_none=True
+            )
+
+            with torch.autocast(
+                    device_type=self.device.type,
+                    dtype=self.amp_dtype,
+                    enabled=self.use_amp,
+            ):
+                outputs = self.model(images)
+
+                loss = self.criterion(
+                    outputs,
+                    labels,
+                )
+
+            self.scaler.scale(
+                loss
+            ).backward()
+
+            self.scaler.step(
+                self.optimizer
+            )
+
+            self.scaler.update()
 
             running_loss += loss.item()
 
-        return running_loss / len(
-            self.train_loader
+        return (
+                running_loss
+                / len(self.train_loader)
         )
 
+    @torch.no_grad()
     @torch.no_grad()
     def validate(self):
 
         self.model.eval()
 
-        running_loss = 0
+        running_loss = 0.0
 
         predictions = []
-
         labels_list = []
 
-        for images, labels in tqdm(self.valid_loader, "Validation", leave=False):
-
+        for images, labels in tqdm(
+                self.valid_loader,
+                "Validation",
+                leave=False,
+        ):
             images = images.to(
-                self.device
+                self.device,
+                non_blocking=True,
             )
 
             labels = labels.to(
-                self.device
+                self.device,
+                non_blocking=True,
             )
 
-            outputs = self.model(
-                images
-            )
+            with torch.autocast(
+                    device_type=self.device.type,
+                    dtype=self.amp_dtype,
+                    enabled=self.use_amp,
+            ):
+                outputs = self.model(images)
 
-            loss = self.criterion(
-                outputs,
-                labels,
-            )
+                loss = self.criterion(
+                    outputs,
+                    labels,
+                )
 
             running_loss += loss.item()
 
@@ -127,14 +164,11 @@ class Trainer:
         )
 
         metrics["val_loss"] = (
-
-            running_loss
-            / len(self.valid_loader)
-
+                running_loss
+                / len(self.valid_loader)
         )
 
         metrics["labels"] = labels_list
-
         metrics["predictions"] = predictions
 
         return metrics
