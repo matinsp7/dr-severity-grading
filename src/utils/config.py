@@ -7,9 +7,11 @@ import yaml
 class DatasetConfig:
     train_csv: str
     valid_csv: str
+    test_csv:  str
 
     train_dir: str
     valid_dir: str
+    test_dir:  str
 
     image_size: int
 

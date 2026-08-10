@@ -37,3 +37,18 @@ def get_valid_dataloader(cfg):
         num_workers=cfg.dataloader.num_workers,
         pin_memory=cfg.dataloader.pin_memory,
     )
+
+def get_test_dataloader(cfg):
+    dataset = APTOSDataset(
+        csv_file=cfg.dataset.test_csv,
+        image_dir=cfg.dataset.valid_dir,
+        transform=get_valid_transform(),
+    )
+
+    return DataLoader(
+        dataset=dataset,
+        batch_size=cfg.dataloader.batch_size,
+        shuffle=False,
+        num_workers=cfg.dataloader.num_workers,
+        pin_memory=cfg.dataloader.pin_memory,
+    )

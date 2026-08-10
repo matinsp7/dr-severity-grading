@@ -5,7 +5,7 @@ import torch.nn as nn
 from src.callbacks.logger import build_logger
 
 from src.callbacks.checkpoint import CheckpointManager
-from src.datasets.dataloader import get_valid_dataloader
+from src.datasets.dataloader import get_test_dataloader
 from src.evaluation.evaluator import Evaluator
 from src.models.builder import build_model
 from src.utils.config import load_config
@@ -52,7 +52,7 @@ def main():
         cfg.experiment_name
     )
 
-    valid_loader = get_valid_dataloader(
+    test_loader = get_test_dataloader(
         cfg
     )
 
@@ -73,7 +73,7 @@ def main():
 
     evaluator = Evaluator(
         model=model,
-        dataloader=valid_loader,
+        dataloader=test_loader,
         criterion=criterion,
         device=device,
     )

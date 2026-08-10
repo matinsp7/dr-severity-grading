@@ -7,9 +7,12 @@ device: cuda
 dataset:
   train_csv: data/train_1.csv
   valid_csv: data/valid.csv
+  test_csv: data/test.csv
+
 
   train_dir: data/train_images
   valid_dir: data/val_images
+  test_dir: data/test_images
 
   image_size: 384
 
@@ -43,8 +46,8 @@ loss:
   name: cross_entropy
 
 trainer:
-  epochs: 5
-  patience: 5
+  epochs: 50
+  patience: 15
 
 output:
   save_dir: outputs
