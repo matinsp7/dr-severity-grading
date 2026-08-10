@@ -107,42 +107,34 @@ class Trainer:
         )
 
     @torch.no_grad()
-    @torch.no_grad()
     def validate(self):
 
         self.model.eval()
 
-        running_loss = 0.0
+        running_loss = 0
 
         predictions = []
+
         labels_list = []
 
-        for images, labels in tqdm(
-                self.valid_loader,
-                "Validation",
-                leave=False,
-        ):
+        for images, labels in tqdm(self.valid_loader, "Validation", leave=False):
+
             images = images.to(
-                self.device,
-                non_blocking=True,
+                self.device
             )
 
             labels = labels.to(
-                self.device,
-                non_blocking=True,
+                self.device
             )
 
-            with torch.autocast(
-                    device_type=self.device.type,
-                    dtype=self.amp_dtype,
-                    enabled=self.use_amp,
-            ):
-                outputs = self.model(images)
+            outputs = self.model(
+                images
+            )
 
-                loss = self.criterion(
-                    outputs,
-                    labels,
-                )
+            loss = self.criterion(
+                outputs,
+                labels,
+            )
 
             running_loss += loss.item()
 
@@ -164,14 +156,18 @@ class Trainer:
         )
 
         metrics["val_loss"] = (
-                running_loss
-                / len(self.valid_loader)
+
+            running_loss
+            / len(self.valid_loader)
+
         )
 
         metrics["labels"] = labels_list
+
         metrics["predictions"] = predictions
 
         return metrics
+
 
     def fit(self):
 

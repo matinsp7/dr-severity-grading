@@ -19,6 +19,7 @@ from src.trainer.trainer import Trainer
 from src.utils.config import load_config
 from src.utils.paths import ExperimentPaths
 from src.callbacks.early_stopping import EarlyStopping
+from src.loss.builder import build_loss
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -94,7 +95,7 @@ def main():
         weight_decay=cfg.optimizer.weight_decay,
     )
 
-    criterion = cfg.loss.name
+    criterion = build_loss(cfg)
 
     logger = build_logger(
         cfg=cfg,
