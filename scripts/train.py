@@ -94,7 +94,7 @@ def main():
         weight_decay=cfg.optimizer.weight_decay,
     )
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = cfg.loss.name
 
     logger = build_logger(
         cfg=cfg,
