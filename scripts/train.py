@@ -18,7 +18,7 @@ from src.models.builder import build_model
 from src.trainer.trainer import Trainer
 from src.utils.config import load_config
 from src.utils.paths import ExperimentPaths
-
+from src.callbacks.early_stopping import EarlyStopping
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -26,6 +26,11 @@ def parse_args():
     parser.add_argument(
         "--config",
         required=True,
+    )
+
+    parser.add_argument(
+        "--resume",
+        action="store_true",
     )
 
     return parser.parse_args()
@@ -100,6 +105,10 @@ def main():
         paths
     )
 
+    early_stopping = EarlyStopping(
+        patience=cfg.trainer.patience,
+    )
+
     trainer = Trainer(
         cfg=cfg,
         model=model,
@@ -111,6 +120,8 @@ def main():
         logger=logger,
         paths=paths,
         device=device,
+        early_stopping=early_stopping,
+        resume=args.resume,
     )
 
     trainer.fit()
