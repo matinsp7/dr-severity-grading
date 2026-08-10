@@ -44,6 +44,7 @@ scheduler:
 
 loss:
   name: cross_entropy
+  gamma: 0.2
 
 trainer:
   epochs: 50

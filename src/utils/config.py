@@ -48,6 +48,7 @@ class SchedulerConfig:
 @dataclass
 class LossConfig:
     name: str
+    gamma: float
 
 
 @dataclass
