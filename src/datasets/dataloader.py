@@ -41,7 +41,7 @@ def get_valid_dataloader(cfg):
 def get_test_dataloader(cfg):
     dataset = APTOSDataset(
         csv_file=cfg.dataset.test_csv,
-        image_dir=cfg.dataset.valid_dir,
+        image_dir=cfg.dataset.test_dir,
         transform=get_valid_transform(),
     )
 

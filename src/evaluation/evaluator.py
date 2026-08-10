@@ -25,7 +25,8 @@ class Evaluator:
     def predict(self):
         self.model.eval()
 
-        running_loss = 0.0
+        total_loss = 0.0
+        total_samples = 0
 
         labels = []
         predictions = []
