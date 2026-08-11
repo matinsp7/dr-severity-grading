@@ -61,9 +61,9 @@ class WandBLogger:
     def log_summary(self, metrics):
         for key, value in metrics.items():
             if key == "val_loss":
-                self.run.summary["val/loss"] = value
+                self.run.summary["test/loss"] = value
             else:
-                self.run.summary[f"val/{key}"] = value
+                self.run.summary[f"test/{key}"] = value
 
     def finish(self):
         self.run.finish()
