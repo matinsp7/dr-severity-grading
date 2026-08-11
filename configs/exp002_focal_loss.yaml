@@ -44,7 +44,7 @@ scheduler:
 
 loss:
   name: focal_loss
-  gamma: 0.2
+  gamma: 2.0
 
 trainer:
   epochs: 50
