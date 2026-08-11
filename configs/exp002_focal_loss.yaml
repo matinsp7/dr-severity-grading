@@ -1,4 +1,4 @@
-experiment_name: exp002_baseline
+experiment_name: exp002_focal_loss
 
 seed: 42
 

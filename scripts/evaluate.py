@@ -1,7 +1,6 @@
 import argparse
 
 import torch
-import torch.nn as nn
 from src.callbacks.logger import build_logger
 
 from src.callbacks.checkpoint import CheckpointManager
@@ -111,10 +110,10 @@ def main():
 
     logger = build_logger(cfg=cfg, paths=paths)
 
-    logger.log_image("evaluation/confusion_matrix", paths.confusion_matrix)                         #w&b
-    logger.log_image("evaluation/normalized_confusion_matrix", paths.normalized_confusion_matrix)   #w&b
-    logger.log_image("evaluation/roc_curve", paths.roc_curve)                                       #w&b
-    logger.log_image("evaluation/pr_curve", paths.pr_curve)                                         #w&b
+    logger.log_image("test/confusion_matrix", paths.confusion_matrix)                         #w&b
+    logger.log_image("test/normalized_confusion_matrix", paths.normalized_confusion_matrix)   #w&b
+    logger.log_image("test/roc_curve", paths.roc_curve)                                       #w&b
+    logger.log_image("test/pr_curve", paths.pr_curve)                                         #w&b
 
     logger.log_summary(results["metrics"])
 
@@ -142,9 +141,8 @@ def main():
 
     metrics = results["metrics"]
 
-
     print(
-        f"Val Loss    : {metrics['val_loss']:.4f}"
+        f"Test Loss    : {metrics['val_loss']:.4f}"
     )
 
     print(
