@@ -10,6 +10,7 @@ from src.evaluation.evaluator import Evaluator
 from src.models.builder import build_model
 from src.utils.config import load_config
 from src.utils.paths import ExperimentPaths
+from src.loss.builder import build_loss
 from sklearn.metrics import classification_report
 from src.evaluation.plots import (
     plot_confusion_matrix,
@@ -69,7 +70,7 @@ def main():
         device=device,
     )
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = build_loss(cfg)
 
     evaluator = Evaluator(
         model=model,
