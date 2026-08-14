@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dataclasses import asdict
+from typing import Any
 import yaml
 
 
@@ -42,8 +43,7 @@ class OptimizerConfig:
 @dataclass
 class SchedulerConfig:
     name: str
-    t_max: int
-
+    params: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class LossConfig:
