@@ -96,7 +96,7 @@ def main():
         weight_decay=cfg.optimizer.weight_decay,
     )
 
-    scheduler = build_scheduler(cfg, optimizer= optimizer)
+    scheduler = build_scheduler(cfg.scheduler, optimizer= optimizer)
 
     criterion = build_loss(cfg)
 
