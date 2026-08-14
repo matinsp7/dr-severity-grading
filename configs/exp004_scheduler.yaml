@@ -40,8 +40,8 @@ optimizer:
 
 scheduler:
   name: cosine
-  T_max: 50
-
+  params:
+    T_max: 50
 loss:
   name: cross_entropy
   gamma: None
