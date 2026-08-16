@@ -58,11 +58,22 @@ class Trainer:
 
         running_loss = 0.0
 
-        for images, labels in tqdm(
+        accumulation_steps = (
+            self.cfg.trainer.gradient_accumulation_steps
+        )
+
+        self.optimizer.zero_grad(
+            set_to_none=True
+        )
+
+        for step, (images, labels) in enumerate(
+            tqdm(
                 self.train_loader,
                 "Training",
                 leave=False,
+            )
         ):
+
             images = images.to(
                 self.device,
                 non_blocking=True,
@@ -73,15 +84,12 @@ class Trainer:
                 non_blocking=True,
             )
 
-            self.optimizer.zero_grad(
-                set_to_none=True
-            )
-
             with torch.autocast(
-                    device_type=self.device.type,
-                    dtype=self.amp_dtype,
-                    enabled=self.use_amp,
+                device_type=self.device.type,
+                dtype=self.amp_dtype,
+                enabled=self.use_amp,
             ):
+
                 outputs = self.model(images)
 
                 loss = self.criterion(
@@ -89,21 +97,40 @@ class Trainer:
                     labels,
                 )
 
+                loss = (
+                    loss
+                    / accumulation_steps
+                )
+
             self.scaler.scale(
                 loss
             ).backward()
 
-            self.scaler.step(
-                self.optimizer
+            should_step = (
+                (step + 1) % accumulation_steps == 0
+                or (step + 1) == len(self.train_loader)
             )
 
-            self.scaler.update()
+            if should_step:
 
-            running_loss += loss.item()
+                self.scaler.step(
+                    self.optimizer
+                )
+
+                self.scaler.update()
+
+                self.optimizer.zero_grad(
+                    set_to_none=True
+                )
+
+            running_loss += (
+                loss.item()
+                * accumulation_steps
+            )
 
         return (
-                running_loss
-                / len(self.train_loader)
+            running_loss
+            / len(self.train_loader)
         )
 
     @torch.no_grad()
@@ -111,25 +138,24 @@ class Trainer:
 
         self.model.eval()
 
-        running_loss = 0
+        running_loss = 0.0
 
         predictions = []
-
         labels_list = []
 
-        for images, labels in tqdm(self.valid_loader, "Validation", leave=False):
+        for images, labels in self.valid_loader:
 
             images = images.to(
-                self.device
+                self.device,
+                non_blocking=True,
             )
 
             labels = labels.to(
-                self.device
+                self.device,
+                non_blocking=True,
             )
 
-            outputs = self.model(
-                images
-            )
+            outputs = self.model(images)
 
             loss = self.criterion(
                 outputs,
@@ -138,16 +164,24 @@ class Trainer:
 
             running_loss += loss.item()
 
-            preds = outputs.argmax(
+            class_logits = self._get_class_logits(
+                outputs
+            )
+
+            preds = class_logits.argmax(
                 dim=1
             )
 
             predictions.extend(
-                preds.cpu().tolist()
+                preds.detach()
+                .cpu()
+                .tolist()
             )
 
             labels_list.extend(
-                labels.cpu().tolist()
+                labels.detach()
+                .cpu()
+                .tolist()
             )
 
         metrics = compute_metrics(
@@ -156,14 +190,11 @@ class Trainer:
         )
 
         metrics["val_loss"] = (
-
             running_loss
             / len(self.valid_loader)
-
         )
 
         metrics["labels"] = labels_list
-
         metrics["predictions"] = predictions
 
         return metrics
@@ -343,3 +374,10 @@ class Trainer:
         )
 
         return start_epoch
+    
+    def _get_class_logits(self, outputs):
+
+        if isinstance(outputs, dict):
+            return outputs["class_logits"]
+
+        return outputs

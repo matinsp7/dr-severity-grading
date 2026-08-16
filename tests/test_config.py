@@ -1,6 +1,6 @@
 from src.utils.config import load_config
 
-cfg = load_config("configs/exp001_baseline.yaml")
+cfg = load_config("configs/exp005_proposed.yaml")
 
 print(cfg.experiment_name)
 
