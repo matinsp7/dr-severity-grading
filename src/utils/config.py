@@ -43,6 +43,13 @@ class ModelConfig:
     pretrained: bool
     num_classes: int
 
+    global_backbone: str = "swin_tiny_patch4_window7_224"
+    local_backbone: str = "efficientnet_b0"
+
+    image_size: int = 384
+    fusion_dim: int = 512
+    dropout: float = 0.2
+
 
 # ============================================================
 # Optimizer
@@ -71,7 +78,11 @@ class SchedulerConfig:
 @dataclass
 class LossConfig:
     name: str
-    gamma: float
+    gamma: float = 2.0
+
+    lambda_ordinal: float = 1.0
+    lambda_boundary: float = 0.5
+    boundary_alpha: float = 2.0
 
 
 # ============================================================
@@ -82,6 +93,7 @@ class LossConfig:
 class TrainerConfig:
     epochs: int
     patience: int
+    gradient_accumulation_steps: int = 1
 
 
 # ============================================================

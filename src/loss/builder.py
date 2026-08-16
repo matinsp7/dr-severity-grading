@@ -1,18 +1,29 @@
 import torch.nn as nn
 
-from src.loss.focal_loss import MultiClassFocalLoss
+from src.loss.adaptive_ordinal import (
+    AdaptiveOrdinalLoss,
+)
 
 
 def build_loss(cfg):
 
-    loss_name = cfg.loss.name.lower()
-
-    if loss_name == "cross_entropy":
+    if cfg.loss.name == "cross_entropy":
         return nn.CrossEntropyLoss()
 
-    if loss_name == "focal_loss":
-        return MultiClassFocalLoss(None, gamma=cfg.loss.gamma)
+    if cfg.loss.name == "focal":
+        from src.loss.focal_loss import FocalLoss
+
+        return FocalLoss(
+            gamma=cfg.loss.gamma,
+        )
+
+    if cfg.loss.name == "adaptive_ordinal":
+        return AdaptiveOrdinalLoss(
+            lambda_ordinal=cfg.loss.lambda_ordinal,
+            lambda_boundary=cfg.loss.lambda_boundary,
+            boundary_alpha=cfg.loss.boundary_alpha,
+        )
 
     raise ValueError(
-        f"Unsupported loss: {cfg.loss.name}"
+        f"Unknown loss: {cfg.loss.name}"
     )
