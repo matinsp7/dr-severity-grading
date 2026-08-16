@@ -32,7 +32,11 @@ class Evaluator:
         predictions = []
         probabilities = []
 
-        for images, batch_labels in tqdm(self.dataloader, "Evaluating", leave=False):
+        for images, batch_labels in tqdm(
+            self.dataloader,
+            "Evaluating",
+            leave=False
+        ):
             images = images.to(
                 self.device,
                 non_blocking=True,
@@ -43,15 +47,24 @@ class Evaluator:
                 non_blocking=True,
             )
 
-            logits = self.model(images)
+            outputs = self.model(images)
 
             loss = self.criterion(
-                logits,
+                outputs,
                 batch_labels,
             )
 
-            total_loss += loss.item() * batch_labels.size(0)
+            total_loss += (
+                loss.item()
+                * batch_labels.size(0)
+            )
+
             total_samples += batch_labels.size(0)
+
+            if isinstance(outputs, dict):
+                logits = outputs["class_logits"]
+            else:
+                logits = outputs
 
             batch_probabilities = torch.softmax(
                 logits,
