@@ -68,6 +68,62 @@ class LoggingConfig:
     backend: str = "wandb"
     project: str = "dr-severity-grading"
 
+@dataclass
+class RangeConfig:
+    min: float
+    max: float
+
+
+@dataclass
+class ProbabilityConfig:
+    p: float
+
+
+@dataclass
+class RotationConfig:
+    degrees: float
+    p: float
+
+
+@dataclass
+class AffineConfig:
+    degrees: float
+    translate: float
+    scale: RangeConfig
+    shear: float
+    p: float
+
+
+@dataclass
+class ColorJitterConfig:
+    brightness: float
+    contrast: float
+    saturation: float
+    hue: float
+    p: float
+
+
+@dataclass
+class ResizedCropConfig:
+    scale: RangeConfig
+    ratio: RangeConfig
+    p: float
+
+
+@dataclass
+class AugmentationConfig:
+    name: str
+
+    horizontal_flip: ProbabilityConfig
+
+    rotation: RotationConfig
+
+    affine: AffineConfig
+
+    color_jitter: ColorJitterConfig
+
+    resized_crop: ResizedCropConfig
+
 
 @dataclass
 class Config:
@@ -84,6 +140,7 @@ class Config:
     trainer: TrainerConfig
     output: OutputConfig
     logging: LoggingConfig
+    augmentation: AugmentationConfig
 
 def config_to_dict(cfg):
     return asdict(cfg)
@@ -107,4 +164,45 @@ def load_config(path: str) -> Config:
         trainer=TrainerConfig(**raw["trainer"]),
         output=OutputConfig(**raw["output"]),
         logging=LoggingConfig( **raw["logging"]),
+        augmentation=AugmentationConfig(
+            name=raw["augmentation"]["name"],
+
+            horizontal_flip=ProbabilityConfig(
+                **raw["augmentation"]["horizontal_flip"]
+            ),
+
+            rotation=RotationConfig(
+                **raw["augmentation"]["rotation"]
+            ),
+
+            affine=AffineConfig(
+                degrees=raw["augmentation"]["affine"]["degrees"],
+
+                translate=raw["augmentation"]["affine"]["translate"],
+
+                scale=RangeConfig(
+                    **raw["augmentation"]["affine"]["scale"]
+                ),
+
+                shear=raw["augmentation"]["affine"]["shear"],
+
+                p=raw["augmentation"]["affine"]["p"],
+            ),
+
+            color_jitter=ColorJitterConfig(
+                **raw["augmentation"]["color_jitter"]
+            ),
+
+            resized_crop=ResizedCropConfig(
+                scale=RangeConfig(
+                    **raw["augmentation"]["resized_crop"]["scale"]
+                ),
+
+                ratio=RangeConfig(
+                    **raw["augmentation"]["resized_crop"]["ratio"]
+                ),
+
+                p=raw["augmentation"]["resized_crop"]["p"],
+            ),
+        ),
     )

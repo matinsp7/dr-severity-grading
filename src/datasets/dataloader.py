@@ -1,17 +1,21 @@
 from torch.utils.data import DataLoader
 
 from src.datasets.aptos_dataset import APTOSDataset
-from src.augmentations.transforms import (
-    get_train_transform,
-    get_valid_transform,
+from src.augmentations.builder import (
+    build_train_augmentation,
+    build_valid_augmentation,
 )
 
-
 def get_train_dataloader(cfg):
+
+    train_transform = build_train_augmentation(
+        cfg
+    )
+
     dataset = APTOSDataset(
         csv_file=cfg.dataset.train_csv,
         image_dir=cfg.dataset.train_dir,
-        transform=get_train_transform(),
+        transform=train_transform,
     )
 
     return DataLoader(
@@ -24,10 +28,15 @@ def get_train_dataloader(cfg):
 
 
 def get_valid_dataloader(cfg):
+
+    valid_transform = build_valid_augmentation(
+        cfg
+    )
+
     dataset = APTOSDataset(
         csv_file=cfg.dataset.valid_csv,
         image_dir=cfg.dataset.valid_dir,
-        transform=get_valid_transform(),
+        transform=valid_transform,
     )
 
     return DataLoader(
@@ -39,10 +48,15 @@ def get_valid_dataloader(cfg):
     )
 
 def get_test_dataloader(cfg):
+
+    valid_transform = build_valid_augmentation(
+        cfg
+    )
+
     dataset = APTOSDataset(
         csv_file=cfg.dataset.test_csv,
         image_dir=cfg.dataset.test_dir,
-        transform=get_valid_transform(),
+        transform=valid_transform,
     )
 
     return DataLoader(
