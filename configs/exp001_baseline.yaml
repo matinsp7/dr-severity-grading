@@ -54,6 +54,10 @@ output:
   save_dir: outputs
 
 logging:
-  enabled: false
+  enabled: true
   backend: wandb
   project: dr-severity-grading
+
+augmentation:
+  name: None
+
