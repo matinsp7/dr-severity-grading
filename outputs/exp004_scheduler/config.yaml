@@ -5,14 +5,14 @@ seed: 42
 device: cuda
 
 dataset:
-  train_csv: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/train_1.csv
-  valid_csv: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/valid.csv
-  test_csv: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/test.csv
+  train_csv: data/train_1.csv
+  valid_csv: data/valid.csv
+  test_csv: data/test.csv
 
 
-  train_dir: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/train_images/train_images
-  valid_dir: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/val_images/val_images
-  test_dir: /home/hanie/work/datasets/mariaherrerot/aptos2019/versions/3/test_images/test_images
+  train_dir: data/train_images
+  valid_dir: data/val_images
+  test_dir: data/test_images
 
   image_size: 384
 
