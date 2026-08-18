@@ -13,6 +13,7 @@ class Trainer:
         train_loader,
         valid_loader,
         optimizer,
+        scheduler,
         criterion,
         checkpoint,
         logger,
@@ -31,6 +32,8 @@ class Trainer:
         self.valid_loader = valid_loader
 
         self.optimizer = optimizer
+
+        self.scheduler = scheduler
 
         self.criterion = criterion
 
@@ -188,6 +191,13 @@ class Trainer:
             val_metrics = (
                 self.validate()
             )
+
+            if self.cfg.scheduler.name == "plateau":
+                self.scheduler.step(
+                    val_metrics["val_loss"]
+                )
+            else:
+                self.scheduler.step()
 
             metrics = {
 
