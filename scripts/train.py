@@ -98,7 +98,7 @@ def main():
 
     scheduler = build_scheduler(cfg.scheduler, optimizer= optimizer)
 
-    criterion = build_loss(cfg)
+    criterion = build_loss(cfg).to(device)
 
     logger = build_logger(
         cfg=cfg,
