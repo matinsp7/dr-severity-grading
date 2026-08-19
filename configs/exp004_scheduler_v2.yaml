@@ -1,4 +1,4 @@
-experiment_name: exp004_scheduler
+experiment_name: exp004_scheduler_v2
 
 seed: 42
 
@@ -43,8 +43,8 @@ scheduler:
   params:
     T_max: 50
 loss:
-  name: focal_loss
-  gamma: 2.0
+  name: mse
+  gamma: none
 
 trainer:
   epochs: 50
