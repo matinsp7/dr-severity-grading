@@ -1,0 +1,95 @@
+experiment_name: exp004_scheduler
+
+seed: 42
+
+device: cuda
+
+dataset:
+  train_csv: data/train_1.csv
+  valid_csv: data/valid.csv
+  test_csv: data/test.csv
+
+
+  train_dir: data/train_images
+  valid_dir: data/val_images
+  test_dir: data/test_images
+
+  image_size: 384
+
+  class_names:
+    - "No DR"
+    - "Mild"
+    - "Moderate"
+    - "Severe"
+    - "Proliferative"
+
+dataloader:
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+
+model:
+  name: efficientnet_b0
+  pretrained: true
+  num_classes: 5
+
+optimizer:
+  name: adamw
+  lr: 0.0001
+  weight_decay: 0.00001
+
+scheduler:
+  name: cosine
+  params:
+    T_max: 50
+loss:
+  name: focal_loss
+  gamma: 2.0
+
+trainer:
+  epochs: 50
+  patience: 15
+
+output:
+  save_dir: outputs
+
+logging:
+  enabled: true
+  backend: wandb
+  project: dr-severity-grading
+
+
+augmentation:
+  name: strong
+
+  horizontal_flip:
+    p: 0.5
+
+  rotation:
+    degrees: 15
+    p: 0.5
+
+  affine:
+    degrees: 0
+    translate: 0.05
+    scale:
+      min: 0.95
+      max: 1.05
+    shear: 5
+    p: 0.5
+
+  color_jitter:
+    brightness: 0.15
+    contrast: 0.15
+    saturation: 0.10
+    hue: 0.02
+    p: 0.5
+
+  resized_crop:
+    scale:
+      min: 0.90
+      max: 1.00
+    ratio:
+      min: 0.95
+      max: 1.05
+    p: 0.5
