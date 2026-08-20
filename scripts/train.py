@@ -20,6 +20,7 @@ from src.utils.config import load_config
 from src.utils.paths import ExperimentPaths
 from src.callbacks.early_stopping import EarlyStopping
 from src.loss.builder import build_loss
+from src.scheduler.builder import build_scheduler
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -95,7 +96,9 @@ def main():
         weight_decay=cfg.optimizer.weight_decay,
     )
 
-    criterion = build_loss(cfg)
+    scheduler = build_scheduler(cfg.scheduler, optimizer= optimizer)
+
+    criterion = build_loss(cfg).to(device)
 
     logger = build_logger(
         cfg=cfg,
@@ -116,6 +119,7 @@ def main():
         train_loader=train_loader,
         valid_loader=valid_loader,
         optimizer=optimizer,
+        scheduler=scheduler,
         criterion=criterion,
         checkpoint=checkpoint,
         logger=logger,
