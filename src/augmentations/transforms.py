@@ -17,6 +17,10 @@ def build_strong_train_transform(cfg):
     return transforms.Compose(
         [
 
+            transforms.Resize(
+                (image_size, image_size)
+            ),
+
             transforms.RandomApply(
                 [
                     transforms.RandomResizedCrop(
@@ -75,10 +79,6 @@ def build_strong_train_transform(cfg):
                     )
                 ],
                 p=aug.color_jitter.p,
-            ),
-
-            transforms.Resize(
-                (image_size, image_size)
             ),
 
             transforms.ToTensor(),
