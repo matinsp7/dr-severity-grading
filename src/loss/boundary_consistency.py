@@ -5,28 +5,54 @@ import torch.nn.functional as F
 
 class AdaptiveBoundaryConsistencyLoss(nn.Module):
     """
-    Enforces consistency among:
+    Adaptive boundary consistency loss.
 
-    1. Categorical class probabilities converted into
-       implicit ordinal boundary probabilities.
+    Boundary importance depends on two signals:
 
-    2. Fused ordinal predictions.
+    1. Local class uncertainty:
+       p_k + p_{k+1}
 
-    3. Global ordinal predictions.
+    2. Disagreement between:
+       - implicit ordinal probabilities from the classification head
+       - explicit ordinal probabilities from the fused ordinal head
 
-    4. Local ordinal predictions.
-
-    Boundary weights are sample-adaptive and depend on
-    probability mass around neighboring classes.
+    The weighting signals are detached from the graph.
     """
 
     def __init__(
         self,
-        alpha: float = 2.0,
+        uncertainty_alpha: float = 2.0,
+        disagreement_beta: float = 2.0,
     ):
         super().__init__()
 
-        self.alpha = alpha
+        self.uncertainty_alpha = uncertainty_alpha
+        self.disagreement_beta = disagreement_beta
+
+    @staticmethod
+    def _implicit_boundary_probabilities(
+        class_probs: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Convert 5-class probabilities into 4 cumulative
+        ordinal probabilities:
+
+            P(y > 0)
+            P(y > 1)
+            P(y > 2)
+            P(y > 3)
+        """
+
+        return torch.flip(
+            torch.cumsum(
+                torch.flip(
+                    class_probs,
+                    dims=[1],
+                ),
+                dim=1,
+            ),
+            dims=[1],
+        )[:, 1:]
 
     def forward(
         self,
@@ -36,48 +62,27 @@ class AdaptiveBoundaryConsistencyLoss(nn.Module):
         local_ordinal_logits: torch.Tensor,
     ) -> torch.Tensor:
 
+        # ---------------------------------------------------------
+        # Classification probabilities
+        # ---------------------------------------------------------
         class_probs = F.softmax(
             class_logits,
             dim=1,
         )
 
         # ---------------------------------------------------------
-        # Implicit ordinal probabilities from class distribution
-        #
-        # C_k = P(y > k)
+        # Convert categorical probabilities into ordinal
+        # boundary probabilities.
         # ---------------------------------------------------------
-        cumulative_from_classes = torch.flip(
-            torch.cumsum(
-                torch.flip(
-                    class_probs,
-                    dims=[1],
-                ),
-                dim=1,
-            ),
-            dims=[1],
-        )
-
-        # Drop final boundary because P(y > 4) = 0
-        cumulative_from_classes = (
-            cumulative_from_classes[:, 1:]
+        implicit_boundary_probs = (
+            self._implicit_boundary_probabilities(
+                class_probs
+            )
         )
 
         # ---------------------------------------------------------
-        # Boundary difficulty:
-        # probability mass around adjacent classes.
-        # Detach so this weighting mechanism does not introduce
-        # an unwanted shortcut through the weighting branch.
+        # Explicit ordinal predictions
         # ---------------------------------------------------------
-        boundary_uncertainty = (
-            class_probs[:, :-1]
-            + class_probs[:, 1:]
-        ).detach()
-
-        boundary_weights = (
-            1.0
-            + self.alpha * boundary_uncertainty
-        )
-
         fused_boundary_probs = torch.sigmoid(
             ordinal_logits
         )
@@ -91,11 +96,42 @@ class AdaptiveBoundaryConsistencyLoss(nn.Module):
         )
 
         # ---------------------------------------------------------
+        # Signal 1:
+        # difficulty of neighboring class boundary.
+        # ---------------------------------------------------------
+        boundary_uncertainty = (
+            class_probs[:, :-1]
+            + class_probs[:, 1:]
+        )
+        # ---------------------------------------------------------
+        # Signal 2:
+        # classification-vs-ordinal disagreement.
+        # ---------------------------------------------------------
+        boundary_disagreement = (
+            implicit_boundary_probs
+            - fused_boundary_probs
+        ).abs()
+
+        # ---------------------------------------------------------
+        # Adaptive weights.
+        #
+        # Detach the signals so the model cannot optimize the
+        # weighting mechanism itself as a shortcut.
+        # ---------------------------------------------------------
+        boundary_weights = (
+            1.0
+            + self.uncertainty_alpha
+            * boundary_uncertainty.detach()
+            + self.disagreement_beta
+            * boundary_disagreement.detach()
+        )
+
+        # ---------------------------------------------------------
         # 1. Classification ↔ fused ordinal consistency
         # ---------------------------------------------------------
         fused_error = (
             fused_boundary_probs
-            - cumulative_from_classes
+            - implicit_boundary_probs.detach()
         ).pow(2)
 
         # ---------------------------------------------------------
@@ -107,7 +143,7 @@ class AdaptiveBoundaryConsistencyLoss(nn.Module):
         ).pow(2)
 
         # ---------------------------------------------------------
-        # 3. Fused ↔ branch agreement
+        # 3. Fused ↔ global/local agreement
         # ---------------------------------------------------------
         fusion_error = 0.5 * (
             (

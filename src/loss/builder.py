@@ -21,7 +21,12 @@ def build_loss(cfg):
         return AdaptiveOrdinalLoss(
             lambda_ordinal=cfg.loss.lambda_ordinal,
             lambda_boundary=cfg.loss.lambda_boundary,
-            boundary_alpha=cfg.loss.boundary_alpha,
+            boundary_uncertainty_alpha=(
+                cfg.loss.boundary_uncertainty_alpha
+            ),
+            boundary_disagreement_beta=(
+                cfg.loss.boundary_disagreement_beta
+            ),
         )
 
     raise ValueError(
