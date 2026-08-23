@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, asdict
-from typing import Any
+from typing import Optional, Any
 import yaml
 
 
@@ -32,6 +32,11 @@ class DataLoaderConfig:
     num_workers: int
     pin_memory: bool
 
+@dataclass
+class SamplingConfig:
+    enabled: bool = False
+    strategy: str = "none"
+    alpha: float = 0.5
 
 # ============================================================
 # Model
@@ -187,6 +192,7 @@ class Config:
 
     dataset: DatasetConfig
     dataloader: DataLoaderConfig
+    sampling: SamplingConfig
     model: ModelConfig
     optimizer: OptimizerConfig
     scheduler: SchedulerConfig
@@ -283,8 +289,67 @@ def load_config(path: str) -> Config:
         seed=raw["seed"],
         device=raw["device"],
 
-        dataset=DatasetConfig(
-            **raw["dataset"]
+        dataset=DatasetConfig(**raw["dataset"]),
+        dataloader=DataLoaderConfig(**raw["dataloader"]),
+
+        sampling=SamplingConfig(
+            **raw.get(
+                "sampling",
+                {
+                    "enabled": False,
+                    "strategy": "none",
+                    "alpha": 0.5,
+                },
+            )
+        ),
+        
+        model=ModelConfig(**raw["model"]),
+        optimizer=OptimizerConfig(**raw["optimizer"]),
+        scheduler=SchedulerConfig(**raw["scheduler"]),
+        loss=LossConfig(**raw["loss"]),
+        trainer=TrainerConfig(**raw["trainer"]),
+        output=OutputConfig(**raw["output"]),
+        logging=LoggingConfig( **raw["logging"]),
+        augmentation=AugmentationConfig(
+            name=raw["augmentation"]["name"],
+
+            horizontal_flip=ProbabilityConfig(
+                **raw["augmentation"]["horizontal_flip"]
+            ),
+
+            rotation=RotationConfig(
+                **raw["augmentation"]["rotation"]
+            ),
+
+            affine=AffineConfig(
+                degrees=raw["augmentation"]["affine"]["degrees"],
+
+                translate=raw["augmentation"]["affine"]["translate"],
+
+                scale=RangeConfig(
+                    **raw["augmentation"]["affine"]["scale"]
+                ),
+
+                shear=raw["augmentation"]["affine"]["shear"],
+
+                p=raw["augmentation"]["affine"]["p"],
+            ),
+
+            color_jitter=ColorJitterConfig(
+                **raw["augmentation"]["color_jitter"]
+            ),
+
+            resized_crop=ResizedCropConfig(
+                scale=RangeConfig(
+                    **raw["augmentation"]["resized_crop"]["scale"]
+                ),
+
+                ratio=RangeConfig(
+                    **raw["augmentation"]["resized_crop"]["ratio"]
+                ),
+
+                p=raw["augmentation"]["resized_crop"]["p"],
+            ),
         ),
 
         dataloader=DataLoaderConfig(

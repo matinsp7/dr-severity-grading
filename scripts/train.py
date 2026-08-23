@@ -119,7 +119,7 @@ def main():
         train_loader=train_loader,
         valid_loader=valid_loader,
         optimizer=optimizer,
-        scheduler=scheduler
+        scheduler=scheduler,
         criterion=criterion,
         checkpoint=checkpoint,
         logger=logger,
