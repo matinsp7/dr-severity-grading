@@ -24,6 +24,11 @@ class DataLoaderConfig:
     num_workers: int
     pin_memory: bool
 
+@dataclass
+class SamplingConfig:
+    enabled: bool = False
+    strategy: str = "none"
+    alpha: float = 0.5
 
 @dataclass
 class ModelConfig:
@@ -147,6 +152,7 @@ class Config:
 
     dataset: DatasetConfig
     dataloader: DataLoaderConfig
+    sampling: SamplingConfig
     model: ModelConfig
     optimizer: OptimizerConfig
     scheduler: SchedulerConfig
@@ -171,6 +177,18 @@ def load_config(path: str) -> Config:
 
         dataset=DatasetConfig(**raw["dataset"]),
         dataloader=DataLoaderConfig(**raw["dataloader"]),
+
+        sampling=SamplingConfig(
+            **raw.get(
+                "sampling",
+                {
+                    "enabled": False,
+                    "strategy": "none",
+                    "alpha": 0.5,
+                },
+            )
+        ),
+        
         model=ModelConfig(**raw["model"]),
         optimizer=OptimizerConfig(**raw["optimizer"]),
         scheduler=SchedulerConfig(**raw["scheduler"]),
