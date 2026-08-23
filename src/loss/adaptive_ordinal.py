@@ -13,7 +13,8 @@ class AdaptiveOrdinalLoss(nn.Module):
         self,
         lambda_ordinal: float = 1.0,
         lambda_boundary: float = 0.5,
-        boundary_alpha: float = 2.0,
+        boundary_uncertainty_alpha: float = 2.0,
+        boundary_disagreement_beta: float = 2.0,
     ):
         super().__init__()
 
@@ -24,7 +25,8 @@ class AdaptiveOrdinalLoss(nn.Module):
 
         self.boundary_consistency = (
             AdaptiveBoundaryConsistencyLoss(
-                alpha=boundary_alpha,
+                uncertainty_alpha=boundary_uncertainty_alpha,
+                disagreement_beta=boundary_disagreement_beta,
             )
         )
 
@@ -46,18 +48,15 @@ class AdaptiveOrdinalLoss(nn.Module):
             outputs["local_ordinal_logits"]
         )
 
-        classification_loss = (
-            F.cross_entropy(
-                class_logits,
-                targets,
-            )
+        classification_loss = F.cross_entropy(
+            class_logits,
+            targets,
         )
 
         ordinal_loss = self.ordinal_loss(
             ordinal_logits,
             targets,
         )
-
         boundary_loss = (
             self.boundary_consistency(
                 class_logits=class_logits,

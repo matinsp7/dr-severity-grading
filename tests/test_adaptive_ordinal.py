@@ -39,7 +39,8 @@ def main():
     criterion = AdaptiveOrdinalLoss(
         lambda_ordinal=1.0,
         lambda_boundary=0.5,
-        boundary_alpha=2.0,
+        boundary_uncertainty_alpha=2.0,
+        boundary_disagreement_beta=2.0,
     )
 
     loss = criterion(

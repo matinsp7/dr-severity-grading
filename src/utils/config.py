@@ -59,7 +59,9 @@ class LossConfig:
 
     lambda_ordinal: float = 1.0
     lambda_boundary: float = 0.5
-    boundary_alpha: float = 2.0
+    
+    boundary_uncertainty_alpha: float = 2.0
+    boundary_disagreement_beta: float = 2.0
 
 
 @dataclass
