@@ -351,38 +351,4 @@ def load_config(path: str) -> Config:
                 p=raw["augmentation"]["resized_crop"]["p"],
             ),
         ),
-
-        dataloader=DataLoaderConfig(
-            **raw["dataloader"]
-        ),
-
-        model=ModelConfig(
-            **raw["model"]
-        ),
-
-        optimizer=OptimizerConfig(
-            **raw["optimizer"]
-        ),
-
-        scheduler=SchedulerConfig(
-            **raw["scheduler"]
-        ),
-
-        loss=LossConfig(
-            **raw["loss"]
-        ),
-
-        trainer=TrainerConfig(
-            **raw["trainer"]
-        ),
-
-        output=OutputConfig(
-            **raw["output"]
-        ),
-
-        logging=LoggingConfig(
-            **raw.get("logging", {})
-        ),
-
-        augmentation=augmentation,
     )

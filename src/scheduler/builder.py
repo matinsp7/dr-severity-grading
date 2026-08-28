@@ -17,7 +17,7 @@ def build_scheduler(cfg, optimizer):
         "plateau": ReduceLROnPlateau,
     }
 
-    name = cfg.name.lower()
+    name = cfg.scheduler.name.lower()
     
     if name not in schedulers:
         raise ValueError(
@@ -29,5 +29,5 @@ def build_scheduler(cfg, optimizer):
 
     return scheduler_cls(
         optimizer,
-        **cfg.params,
+        **cfg.scheduler.params,
     )
