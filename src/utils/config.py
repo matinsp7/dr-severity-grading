@@ -1,6 +1,5 @@
-from dataclasses import dataclass, asdict
-from typing import Optional
-
+from dataclasses import dataclass, field, asdict
+from typing import Any
 import yaml
 
 
@@ -63,8 +62,7 @@ class OptimizerConfig:
 @dataclass
 class SchedulerConfig:
     name: str
-    t_max: int
-
+    params: dict[str, Any] = field(default_factory=dict)
 
 # ============================================================
 # Loss
