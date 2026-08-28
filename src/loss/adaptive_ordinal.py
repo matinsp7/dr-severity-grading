@@ -1,11 +1,9 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from src.loss.ordinal_loss import OrdinalBCELoss
-from src.loss.boundary_consistency import (
-    AdaptiveBoundaryConsistencyLoss,
-)
-
+from src.loss.boundary_consistency import AdaptiveBoundaryConsistencyLoss
 
 class AdaptiveOrdinalLoss(nn.Module):
 
@@ -23,47 +21,31 @@ class AdaptiveOrdinalLoss(nn.Module):
 
         self.ordinal_loss = OrdinalBCELoss()
 
-        self.boundary_consistency = (
-            AdaptiveBoundaryConsistencyLoss(
-                uncertainty_alpha=boundary_uncertainty_alpha,
-                disagreement_beta=boundary_disagreement_beta,
-            )
+        self.boundary_consistency = AdaptiveBoundaryConsistencyLoss(
+            uncertainty_alpha=boundary_uncertainty_alpha,
+            disagreement_beta=boundary_disagreement_beta,
         )
 
-    def forward(
-        self,
-        outputs,
-        targets,
-    ):
-
+    def forward(self, outputs, targets):
         class_logits = outputs["class_logits"]
-
         ordinal_logits = outputs["ordinal_logits"]
+        global_ordinal_logits = outputs["global_ordinal_logits"]
+        local_ordinal_logits = outputs["local_ordinal_logits"]
 
-        global_ordinal_logits = (
-            outputs["global_ordinal_logits"]
-        )
+        num_classes = class_logits.size(1)
+        targets_one_hot = F.one_hot(targets, num_classes=num_classes).float()
 
-        local_ordinal_logits = (
-            outputs["local_ordinal_logits"]
-        )
+        class_probs = F.softmax(class_logits, dim=1)
 
-        classification_loss = F.cross_entropy(
-            class_logits,
-            targets,
-        )
+        classification_loss = F.mse_loss(class_probs, targets_one_hot, reduction='mean')
 
-        ordinal_loss = self.ordinal_loss(
-            ordinal_logits,
-            targets,
-        )
-        boundary_loss = (
-            self.boundary_consistency(
-                class_logits=class_logits,
-                ordinal_logits=ordinal_logits,
-                global_ordinal_logits=global_ordinal_logits,
-                local_ordinal_logits=local_ordinal_logits,
-            )
+        ordinal_loss = self.ordinal_loss(ordinal_logits, targets)
+        
+        boundary_loss = self.boundary_consistency(
+            class_logits=class_logits,
+            ordinal_logits=ordinal_logits,
+            global_ordinal_logits=global_ordinal_logits,
+            local_ordinal_logits=local_ordinal_logits,
         )
 
         total_loss = (
