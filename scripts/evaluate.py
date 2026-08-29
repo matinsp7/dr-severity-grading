@@ -69,7 +69,7 @@ def main():
         device=device,
     )
 
-    criterion = build_loss(cfg)
+    criterion = build_loss(cfg).to(device)
 
     evaluator = Evaluator(
         model=model,

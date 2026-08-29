@@ -58,11 +58,6 @@ class Evaluator:
                 dim=1,
             )
 
-            batch_probabilities = torch.softmax(
-                logits,
-                dim=1,
-            )
-
             batch_predictions = torch.sum(
                 batch_probabilities * self.criterion.class_indices,
                 dim=1,

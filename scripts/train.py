@@ -84,6 +84,8 @@ def main():
         cfg
     )
 
+    train_labels = train_loader.dataset.labels
+
     valid_loader = get_valid_dataloader(
         cfg
     )
@@ -98,7 +100,7 @@ def main():
 
     scheduler = build_scheduler(cfg.scheduler, optimizer= optimizer)
 
-    criterion = build_loss(cfg).to(device)
+    criterion = build_loss(cfg, train_labels=train_labels).to(device)
 
     logger = build_logger(
         cfg=cfg,

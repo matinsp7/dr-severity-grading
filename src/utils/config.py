@@ -74,6 +74,14 @@ class LossConfig:
     name: str
     gamma: float
 
+#=============================================================
+# Imbalance handling
+#=============================================================
+
+@dataclass
+class ImbalanceConfig:
+    use_class_weights: bool = False
+    use_weighted_sampler: bool = False
 
 # ============================================================
 # Trainer
@@ -182,6 +190,7 @@ class Config:
     output: OutputConfig
     logging: LoggingConfig
     augmentation: AugmentationConfig
+    imbalance: ImbalanceConfig
 
 
 # ============================================================
@@ -288,6 +297,10 @@ def load_config(path: str) -> Config:
 
         scheduler=SchedulerConfig(
             **raw["scheduler"]
+        ),
+
+        imbalance=ImbalanceConfig(
+            **raw.get("imbalance", {})
         ),
 
         loss=LossConfig(

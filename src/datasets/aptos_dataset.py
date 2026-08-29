@@ -10,6 +10,7 @@ class APTOSDataset(Dataset):
         self.data = pd.read_csv(csv_file)
         self.image_dir = Path(image_dir)
         self.transform = transform
+        self.labels = self.data["diagnosis"].astype(int).to_numpy()
 
     def __len__(self):
         return len(self.data)
