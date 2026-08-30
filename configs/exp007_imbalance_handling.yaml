@@ -43,7 +43,7 @@ scheduler:
   params:
     T_max: 50
 loss:
-  name: cross_entropy
+  name: mse
   gamma: none
 
 imbalance:

@@ -58,9 +58,19 @@ class Evaluator:
                 dim=1,
             )
 
-            batch_predictions = batch_probabilities.argmax(
-                dim=1
+            batch_probabilities = torch.softmax(
+                logits,
+                dim=1,
             )
+
+            batch_predictions = torch.sum(
+                batch_probabilities * self.criterion.class_indices,
+                dim=1,
+            )
+
+            batch_predictions = torch.round(
+                batch_predictions
+            ).long()
 
             labels.extend(
                 batch_labels.cpu().tolist()
