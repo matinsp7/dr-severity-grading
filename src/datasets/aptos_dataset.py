@@ -1,4 +1,5 @@
 from pathlib import Path
+import numpy as np
 
 import pandas as pd
 from PIL import Image
@@ -21,10 +22,11 @@ class APTOSDataset(Dataset):
         image_path = self.image_dir / f"{row['id_code']}.png"
 
         image = Image.open(image_path).convert("RGB")
+        image = np.array(image)
 
         label = int(row["diagnosis"])
 
         if self.transform:
-            image = self.transform(image)
-
+            augmented = self.transform(image=image)
+            image = augmented["image"]
         return image, label

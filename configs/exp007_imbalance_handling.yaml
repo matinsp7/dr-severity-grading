@@ -43,7 +43,7 @@ scheduler:
   params:
     T_max: 50
 loss:
-  name: mse
+  name: cross_entropy
   gamma: none
 
 imbalance:
@@ -70,30 +70,31 @@ augmentation:
     p: 0.5
 
   rotation:
-    degrees: 15
+    degrees: 30
     p: 0.5
 
   affine:
-    degrees: 0
     translate: 0.05
     scale:
-      min: 0.95
-      max: 1.05
-    shear: 5
-    p: 0.5
+      min: 0.9
+      max: 1.1
+    rotate: 15
+    p: 0.4
 
   color_jitter:
     brightness: 0.15
     contrast: 0.15
-    saturation: 0.10
-    hue: 0.02
+    saturation: 15
+    hue: 10
+    value: 10
     p: 0.5
+    hue_p: 0.3
 
-  resized_crop:
-    scale:
-      min: 0.90
-      max: 1.00
-    ratio:
-      min: 0.95
-      max: 1.05
-    p: 0.5
+  gauss_noise:
+    min: 0.012
+    max: 0.028
+    p: 0.3
+
+  clahe:
+    clip_limit: 2.0
+    p: 0.3
