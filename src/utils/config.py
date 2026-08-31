@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
+
 import yaml
 
 
@@ -7,11 +7,11 @@ import yaml
 class DatasetConfig:
     train_csv: str
     valid_csv: str
-    test_csv:  str
+    test_csv: str
 
     train_dir: str
     valid_dir: str
-    test_dir:  str
+    test_dir: str
 
     image_size: int
 
@@ -23,6 +23,15 @@ class DataLoaderConfig:
     batch_size: int
     num_workers: int
     pin_memory: bool
+
+
+@dataclass
+class InferenceConfig:
+    mode: str = "argmax"
+
+    fusion_lambda: float = 0.7
+
+    thresholds: list[float] | None = None
 
 
 @dataclass
@@ -59,7 +68,7 @@ class LossConfig:
 
     lambda_ordinal: float = 1.0
     lambda_boundary: float = 0.5
-    
+
     boundary_uncertainty_alpha: float = 2.0
     boundary_disagreement_beta: float = 2.0
 
@@ -81,6 +90,7 @@ class LoggingConfig:
     enabled: bool = True
     backend: str = "wandb"
     project: str = "dr-severity-grading"
+
 
 @dataclass
 class RangeConfig:
@@ -147,17 +157,22 @@ class Config:
 
     dataset: DatasetConfig
     dataloader: DataLoaderConfig
+    inference: InferenceConfig
+
     model: ModelConfig
     optimizer: OptimizerConfig
     scheduler: SchedulerConfig
     loss: LossConfig
     trainer: TrainerConfig
+
     output: OutputConfig
     logging: LoggingConfig
     augmentation: AugmentationConfig
 
+
 def config_to_dict(cfg):
     return asdict(cfg)
+
 
 def load_config(path: str) -> Config:
 
@@ -169,15 +184,58 @@ def load_config(path: str) -> Config:
         seed=raw["seed"],
         device=raw["device"],
 
-        dataset=DatasetConfig(**raw["dataset"]),
-        dataloader=DataLoaderConfig(**raw["dataloader"]),
-        model=ModelConfig(**raw["model"]),
-        optimizer=OptimizerConfig(**raw["optimizer"]),
-        scheduler=SchedulerConfig(**raw["scheduler"]),
-        loss=LossConfig(**raw["loss"]),
-        trainer=TrainerConfig(**raw["trainer"]),
-        output=OutputConfig(**raw["output"]),
-        logging=LoggingConfig( **raw["logging"]),
+        dataset=DatasetConfig(
+            **raw["dataset"]
+        ),
+
+        dataloader=DataLoaderConfig(
+            **raw["dataloader"]
+        ),
+
+        inference=InferenceConfig(
+            **raw.get(
+                "inference",
+                {
+                    "mode": "argmax",
+                    "fusion_lambda": 0.7,
+                    "thresholds": [
+                        0.5,
+                        1.5,
+                        2.5,
+                        3.5,
+                    ],
+                },
+            )
+        ),
+
+        model=ModelConfig(
+            **raw["model"]
+        ),
+
+        optimizer=OptimizerConfig(
+            **raw["optimizer"]
+        ),
+
+        scheduler=SchedulerConfig(
+            **raw["scheduler"]
+        ),
+
+        loss=LossConfig(
+            **raw["loss"]
+        ),
+
+        trainer=TrainerConfig(
+            **raw["trainer"]
+        ),
+
+        output=OutputConfig(
+            **raw["output"]
+        ),
+
+        logging=LoggingConfig(
+            **raw["logging"]
+        ),
+
         augmentation=AugmentationConfig(
             name=raw["augmentation"]["name"],
 

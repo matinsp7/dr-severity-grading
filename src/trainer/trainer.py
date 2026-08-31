@@ -25,19 +25,14 @@ class Trainer:
         self.cfg = cfg
 
         self.model = model
-
         self.train_loader = train_loader
-
         self.valid_loader = valid_loader
 
         self.optimizer = optimizer
-
         self.criterion = criterion
 
         self.checkpoint = checkpoint
-
         self.logger = logger
-
         self.paths = paths
 
         self.device = device
@@ -46,11 +41,17 @@ class Trainer:
 
         self.early_stopping = early_stopping
 
-        self.use_amp = (self.cfg.device == "cuda" and torch.cuda.is_available())
+        self.use_amp = (
+            self.cfg.device == "cuda"
+            and torch.cuda.is_available()
+        )
 
         self.amp_dtype = torch.float16
 
-        self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
+        self.scaler = torch.amp.GradScaler(
+            "cuda",
+            enabled=self.use_amp,
+        )
 
     def train_one_epoch(self):
 
@@ -107,8 +108,10 @@ class Trainer:
             ).backward()
 
             should_step = (
-                (step + 1) % accumulation_steps == 0
-                or (step + 1) == len(self.train_loader)
+                (step + 1)
+                % accumulation_steps == 0
+                or (step + 1)
+                == len(self.train_loader)
             )
 
             if should_step:
@@ -164,12 +167,8 @@ class Trainer:
 
             running_loss += loss.item()
 
-            class_logits = self._get_class_logits(
+            preds = self._get_predictions(
                 outputs
-            )
-
-            preds = class_logits.argmax(
-                dim=1
             )
 
             predictions.extend(
@@ -199,6 +198,104 @@ class Trainer:
 
         return metrics
 
+    def _get_class_logits(self, outputs):
+
+        if isinstance(outputs, dict):
+            return outputs["class_logits"]
+
+        return outputs
+
+    def _get_predictions(self, outputs):
+
+        class_logits = self._get_class_logits(
+            outputs
+        )
+
+        class_probabilities = torch.softmax(
+            class_logits,
+            dim=1,
+        )
+
+        mode = self.cfg.inference.mode
+
+        if mode == "argmax":
+
+            return class_probabilities.argmax(
+                dim=1
+            )
+
+        if mode == "fused":
+
+            if not isinstance(outputs, dict):
+                raise TypeError(
+                    "Fused inference requires "
+                    "dictionary model outputs."
+                )
+
+            ordinal_logits = outputs[
+                "ordinal_logits"
+            ]
+
+            ordinal_probabilities = (
+                torch.sigmoid(
+                    ordinal_logits
+                )
+            )
+
+            class_ids = torch.arange(
+                class_probabilities.shape[1],
+                device=class_probabilities.device,
+                dtype=class_probabilities.dtype,
+            )
+
+            class_expected = (
+                class_probabilities
+                * class_ids
+            ).sum(
+                dim=1
+            )
+
+            ordinal_expected = (
+                ordinal_probabilities.sum(
+                    dim=1
+                )
+            )
+
+            lambda_cls = (
+                self.cfg.inference.fusion_lambda
+            )
+
+            fused_score = (
+                lambda_cls
+                * class_expected
+                + (
+                    1.0
+                    - lambda_cls
+                )
+                * ordinal_expected
+            )
+
+            if not self.cfg.inference.thresholds:
+                raise ValueError(
+                    "Fused inference requires "
+                    "four decision thresholds."
+                )
+
+            thresholds = torch.tensor(
+                self.cfg.inference.thresholds,
+                device=fused_score.device,
+                dtype=fused_score.dtype,
+            )
+
+            return torch.bucketize(
+                fused_score,
+                thresholds,
+                right=False,
+            )
+
+        raise ValueError(
+            f"Unknown inference mode: {mode}"
+        )
 
     def fit(self):
 
@@ -221,64 +318,54 @@ class Trainer:
             )
 
             metrics = {
-
                 "epoch": epoch + 1,
-
                 "train_loss": train_loss,
-
                 **val_metrics,
-
             }
 
-            self.logger.log(metrics)
-
-            is_best = (
-
-                self.checkpoint.update_best(
-
-                    self.model,
-
-                    metrics,
-
-                )
-
+            self.logger.log(
+                metrics
             )
 
-            should_stop = self.early_stopping.step(
-                is_best
+            is_best = (
+                self.checkpoint.update_best(
+                    self.model,
+                    metrics,
+                )
+            )
+
+            should_stop = (
+                self.early_stopping.step(
+                    is_best
+                )
             )
 
             self.checkpoint.save_last(
                 self.model,
                 self.optimizer,
-                epoch ,
+                epoch,
                 self.early_stopping.counter,
             )
 
             self.print_metrics(
-
                 metrics,
-
                 is_best,
-
             )
 
             if should_stop:
+
                 print(
                     "EarlyStopping: "
                     "QWK did not improve for "
                     f"{self.early_stopping.patience} epochs."
                 )
+
                 break
 
     def print_metrics(
-
         self,
-
         metrics,
-
         is_best,
-
     ):
 
         print()
@@ -338,11 +425,14 @@ class Trainer:
         print()
 
     def resume(self):
+
         if not self.paths.last_model.exists():
+
             print(
                 "No checkpoint found! "
                 "Starting training from scratch."
             )
+
             return 0
 
         checkpoint = torch.load(
@@ -366,18 +456,17 @@ class Trainer:
             checkpoint["patience_counter"]
         )
 
-        start_epoch = checkpoint["epoch"]+1
+        start_epoch = (
+            checkpoint["epoch"]
+            + 1
+        )
 
-        print("Resume Training")
+        print(
+            "Resume Training"
+        )
+
         print(
             f"Resuming from epoch {start_epoch}"
         )
 
         return start_epoch
-    
-    def _get_class_logits(self, outputs):
-
-        if isinstance(outputs, dict):
-            return outputs["class_logits"]
-
-        return outputs
