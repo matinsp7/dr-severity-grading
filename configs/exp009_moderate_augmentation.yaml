@@ -122,10 +122,10 @@ augmentation:
 inference:
   mode: fused
 
-  fusion_lambda: 0.7
+  fusion_lambda: 0.25
 
   thresholds:
-    - 0.493580
-    - 1.428648
-    - 2.387920
-    - 3.362222
+    - 0.5
+    - 1.5
+    - 2.5
+    - 3.5
