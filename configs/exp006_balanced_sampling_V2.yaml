@@ -1,0 +1,127 @@
+experiment_name: exp006_balanced_sampling_V2
+
+seed: 42
+
+device: cuda
+
+dataset:
+  train_csv: data/train_1.csv
+  valid_csv: data/valid.csv
+  test_csv: data/test.csv
+
+  train_dir: data/train_images
+  valid_dir: data/val_images
+  test_dir: data/test_images
+
+  image_size: 384
+
+  class_names:
+    - no_dr
+    - mild
+    - moderate
+    - severe
+    - proliferative
+
+
+dataloader:
+  batch_size: 2
+  num_workers: 2
+  pin_memory: true
+
+
+sampling:
+  enabled: true
+  strategy: weighted
+  alpha: 0.5
+
+
+model:
+  name: dual_branch
+
+  pretrained: true
+  num_classes: 5
+
+  global_backbone: swin_tiny_patch4_window7_224
+  local_backbone: efficientnet_b0
+
+  image_size: 384
+
+  fusion_dim: 512
+  dropout: 0.2
+
+
+optimizer:
+  name: adamw
+
+  lr: 0.00005
+  weight_decay: 0.00001
+
+
+scheduler:
+  name: cosine
+  params:
+    T_max: 50
+
+
+loss:
+  name: adaptive_ordinal
+
+  gamma: 2.0
+
+  lambda_ordinal: 1.0
+  lambda_boundary: 0.5
+
+  boundary_uncertainty_alpha: 2.0
+  boundary_disagreement_beta: 2.0
+
+
+trainer:
+  epochs: 50
+  patience: 7
+  gradient_accumulation_steps: 4
+
+
+output:
+  save_dir: outputs
+
+
+logging:
+  enabled: true
+  backend: wandb
+  project: dr-severity-grading
+
+
+augmentation:
+  name: strong
+
+  horizontal_flip:
+    p: 0.5
+
+  rotation:
+    degrees: 15
+    p: 0.5
+
+  affine:
+    degrees: 0
+    translate: 0.05
+    scale:
+      min: 0.95
+      max: 1.05
+    shear: 5
+    p: 0.5
+
+  color_jitter:
+    brightness: 0.15
+    contrast: 0.15
+    saturation: 0.10
+    hue: 0.02
+    p: 0.5
+
+  resized_crop:
+    scale:
+      min: 0.90
+      max: 1.00
+    ratio:
+      min: 0.95
+      max: 1.05
+    p: 0.5

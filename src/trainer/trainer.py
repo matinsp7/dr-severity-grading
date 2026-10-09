@@ -13,6 +13,7 @@ class Trainer:
         train_loader,
         valid_loader,
         optimizer,
+        scheduler,
         criterion,
         checkpoint,
         logger,
@@ -32,6 +33,8 @@ class Trainer:
 
         self.optimizer = optimizer
 
+        self.scheduler = scheduler
+
         self.criterion = criterion
 
         self.checkpoint = checkpoint
@@ -46,19 +49,114 @@ class Trainer:
 
         self.early_stopping = early_stopping
 
+        self.use_amp = (self.cfg.device == "cuda" and torch.cuda.is_available())
+
+        self.amp_dtype = torch.float16
+
+        self.scaler = torch.amp.GradScaler("cuda", enabled=self.use_amp)
+
     def train_one_epoch(self):
 
         self.model.train()
 
-        running_loss = 0
+        running_loss = 0.0
 
-        for images, labels in tqdm(self.train_loader, "Training", leave=False):
+        accumulation_steps = (
+            self.cfg.trainer.gradient_accumulation_steps
+        )
 
-            images = images.to(self.device)
+        self.optimizer.zero_grad(
+            set_to_none=True
+        )
 
-            labels = labels.to(self.device)
+        for step, (images, labels) in enumerate(
+            tqdm(
+                self.train_loader,
+                "Training",
+                leave=False,
+            )
+        ):
 
-            self.optimizer.zero_grad()
+            images = images.to(
+                self.device,
+                non_blocking=True,
+            )
+
+            labels = labels.to(
+                self.device,
+                non_blocking=True,
+            )
+
+            with torch.autocast(
+                device_type=self.device.type,
+                dtype=self.amp_dtype,
+                enabled=self.use_amp,
+            ):
+
+                outputs = self.model(images)
+
+                loss = self.criterion(
+                    outputs,
+                    labels,
+                )
+
+                loss = (
+                    loss
+                    / accumulation_steps
+                )
+
+            self.scaler.scale(
+                loss
+            ).backward()
+
+            should_step = (
+                (step + 1) % accumulation_steps == 0
+                or (step + 1) == len(self.train_loader)
+            )
+
+            if should_step:
+
+                self.scaler.step(
+                    self.optimizer
+                )
+
+                self.scaler.update()
+
+                self.optimizer.zero_grad(
+                    set_to_none=True
+                )
+
+            running_loss += (
+                loss.item()
+                * accumulation_steps
+            )
+
+        return (
+            running_loss
+            / len(self.train_loader)
+        )
+
+    @torch.no_grad()
+    def validate(self):
+
+        self.model.eval()
+
+        running_loss = 0.0
+
+        predictions = []
+        labels_list = []
+
+        for images, labels in self.valid_loader:
+
+            images = images.to(
+                self.device,
+                non_blocking=True,
+            )
+
+            labels = labels.to(
+                self.device,
+                non_blocking=True,
+            )
 
             outputs = self.model(images)
 
@@ -67,58 +165,26 @@ class Trainer:
                 labels,
             )
 
-            loss.backward()
-
-            self.optimizer.step()
-
             running_loss += loss.item()
 
-        return running_loss / len(
-            self.train_loader
-        )
-
-    @torch.no_grad()
-    def validate(self):
-
-        self.model.eval()
-
-        running_loss = 0
-
-        predictions = []
-
-        labels_list = []
-
-        for images, labels in tqdm(self.valid_loader, "Validation", leave=False):
-
-            images = images.to(
-                self.device
+            class_logits = self._get_class_logits(
+                outputs
             )
 
-            labels = labels.to(
-                self.device
-            )
-
-            outputs = self.model(
-                images
-            )
-
-            loss = self.criterion(
-                outputs,
-                labels,
-            )
-
-            running_loss += loss.item()
-
-            preds = outputs.argmax(
+            preds = class_logits.argmax(
                 dim=1
             )
 
             predictions.extend(
-                preds.cpu().tolist()
+                preds.detach()
+                .cpu()
+                .tolist()
             )
 
             labels_list.extend(
-                labels.cpu().tolist()
+                labels.detach()
+                .cpu()
+                .tolist()
             )
 
         metrics = compute_metrics(
@@ -127,17 +193,15 @@ class Trainer:
         )
 
         metrics["val_loss"] = (
-
             running_loss
             / len(self.valid_loader)
-
         )
 
         metrics["labels"] = labels_list
-
         metrics["predictions"] = predictions
 
         return metrics
+
 
     def fit(self):
 
@@ -158,6 +222,13 @@ class Trainer:
             val_metrics = (
                 self.validate()
             )
+
+            if self.cfg.scheduler.name == "plateau":
+                self.scheduler.step(
+                    val_metrics["val_loss"]
+                )
+            else:
+                self.scheduler.step()
 
             metrics = {
 
@@ -313,3 +384,10 @@ class Trainer:
         )
 
         return start_epoch
+    
+    def _get_class_logits(self, outputs):
+
+        if isinstance(outputs, dict):
+            return outputs["class_logits"]
+
+        return outputs

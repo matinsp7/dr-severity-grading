@@ -39,11 +39,12 @@ optimizer:
   weight_decay: 0.00001
 
 scheduler:
-  name: cosine
-  t_max: 30
+  name: None
+  t_max: None
 
 loss:
   name: cross_entropy
+  gamma: None
 
 trainer:
   epochs: 50
@@ -56,3 +57,7 @@ logging:
   enabled: true
   backend: wandb
   project: dr-severity-grading
+
+augmentation:
+  name: None
+

@@ -81,7 +81,30 @@ class MetricLogger:
         pass
 
     def log_summary(self, metrics):
-        pass
+
+        summary_path = (
+                self.csv_path.parent
+                / "evaluation_summary.csv"
+        )
+
+        with open(
+                summary_path,
+                "w",
+                newline="",
+        ) as f:
+
+            writer = csv.writer(f)
+
+            writer.writerow(
+                ["metric", "value"]
+            )
+
+            for name, value in metrics.items():
+
+                if isinstance(value, (int, float)):
+                    writer.writerow(
+                        [name, value]
+                    )
 
     def finish(self):
         pass

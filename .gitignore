@@ -14,7 +14,7 @@ wandb
 data/test_images/
 data/train_images
 data/val_images
-outputs/
+checkpoints/
 
 repomix-output.xml
 
